@@ -1,0 +1,340 @@
+<script src="http://use.edgefonts.net/lato.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+
+body {
+  font-family: lato, serif;
+  font-size: 11px;
+  padding: 0;
+  margin: 0;
+}
+
+#chart {
+  width: 740px;
+  float: left;
+}
+
+#sidebar {
+  width: 200px;
+  float: left;
+}
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: none;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-size: 9px;
+  fill: #999;
+  color: #999;
+}
+
+.axis .major line {
+  stroke: #ddd;
+}
+
+.y.axis .major line {
+  stroke-opacity: .2;
+}
+
+.title{
+  font-size: 1.5em;
+}
+
+.country:hover, .legend:hover {
+  cursor: pointer;
+}
+
+.tooltip {
+  padding: .5em;
+  background: #fff;
+  border: 1px solid #eee;
+  width: 150px;
+  line-height: 1.5em;
+}
+
+</style>
+
+<div id="chart"></div>  
+<div id="sidebar"><h1>Distrubution of Grant Awards in Fiscal Year 2013</h1></div>  
+
+
+<script>
+
+
+/**
+ * Vars, Scales, Axies
+ */
+
+// Number Formatting
+var th = d3.format(",")
+
+//  Default Color Range
+var color = d3.scale.category20();
+
+var margin = {top: 10, right: 20, bottom: 20, left: 100},
+    width = 740 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+// Y Scale for Contract Amount
+var x = d3.scale.linear()
+    .range([10, width]);
+
+// Order Countries on X
+var y = d3.scale.ordinal()
+      .rangeRoundBands([0, height]);    
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .tickSize(-width)
+    .orient("left");
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .tickSize(-height)
+    .tickFormat(function(d) { return d + "M"; })
+    // .tickFormat(function(d) { return Math.round(d / 1e6) + "M"; })
+    .orient("bottom");
+
+/**
+ * Draw Frame
+ */
+var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// Load the data from 2013
+d3.csv("/sites/default/files/data_set/charlene_manuel/sprint_major-contract-awards-2013.csv", function(error, data) {
+
+  // Convert strings to numbers.
+  data.forEach(function(d) {
+    d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
+  });
+
+
+  // Nest Borrower Countries into a new Array
+  var cData = d3.nest()
+  .key(function(d) { return d["Borrower Country"]; })
+  .entries(data);
+
+  // Filter Countries that has less than 15 contracts
+  cData = cData.filter(function(d){ return d.values.length > 15 })
+
+  x.domain(d3.extent(data, function(d) { return d.value; })).nice();
+  y.domain(cData.map(function(d) { return d.key; }));
+
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + (height+10) + ")")
+    .call(xAxis)
+  .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    // .attr("dx", 50)
+    .attr("dy", -10)
+    .style("fill", "#666")
+    .style("text-anchor", "end")
+    .text("Total Contract Amount (USD)")
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+      .selectAll("text")
+      .attr("dy", -3)
+    .style("text-anchor", "end")
+
+
+
+
+
+  // Label for the Filtered Country or Sector.
+  var title = svg.append("text")
+      .attr("class", "title")
+      .attr("x", width/2)
+      .attr("y", height-25)
+      .attr("dy", 25)
+      .style("text-anchor", "middle")
+      .text("");    
+
+/**
+* Draw Dots
+*/
+  var country = svg.selectAll(".country")
+      .data(cData, function(d) { return d.key; })
+    .enter().append("g")
+    .attr("class", "country")
+    .on("mouseover", function(d) { filterC(d) }) 
+    .on("mouseout", function(d) { filterOff(d) })
+    
+  country.selectAll(".dot")
+    .data(function(d) { return d.values; })
+    .enter().append("circle")
+    .attr("class", "dot")
+    .attr("r", 3.5)
+    .attr("cy", function(d) { return y(d["Borrower Country"]) })
+    .attr("cx", function(d) { return x(d.value); })
+    .style("fill", function(d) { return color(d["Major Sector"]); })
+    .style("opacity", .5)
+    // Call tooltip helper to show information about the Contract
+    .call(d3.helper.tooltip()
+      .attr("class", function(d, i) { d["Major Sector"] })
+      .attr("d", "b")
+      .text(function(d, i){
+        return "Country:<b>"+d["Borrower Country"] + "</b><br>Supplier: <b>"+d["Supplier Country"] + "</b><br>Supplied ($): <b>"+th(d.value) + "</b><br>Sector: <b>"+d["Major Sector"]+"</b><br>";}));
+
+/**
+* Add Legend
+*/
+
+var info = d3.select("#sidebar").append("svg")
+    .attr("width", 205)
+    .attr("height", 200)
+    .append("g")
+    .attr("transform", "translate(5,5)");
+
+
+
+  var legend = info.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 16 + ")"; })
+      .on("mouseover", function(d) { filterL(d) })
+      .on("mouseout", function(d) { filterOff(d) });
+
+  legend.append("circle")
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .attr("r", 5)
+      .style("fill", color)
+
+  legend.append("text")
+      .attr("x", 12)
+      .attr("y", 0)
+      .attr("dy", ".4em")
+      .style("text-anchor", "start")
+      .text(function(d) { return d; });
+
+/**
+* Filter Functions on Hover
+*/
+  function filterC(selected) {
+    svg.selectAll(".dot")
+    .style("opacity", .1)
+    .filter(function(d) { return d["Borrower Country"] == selected.key; })
+     .style("opacity", 1)
+
+    title.text(selected.key); 
+  }
+
+  function filterL(selected) {
+    svg.selectAll(".dot")
+      .style("opacity", 0)
+      .filter(function(d) { return d["Major Sector"] == selected; })
+      .style("opacity", 1)
+
+    title.text(selected);  
+  }
+
+  function filterOff(selected) {
+    svg.selectAll(".dot")
+      .style("opacity", .5)
+
+    title.text("");
+  }      
+
+});
+
+
+
+// Tooltip Helper from 
+// https://gist.github.com/milroc/2975255
+d3.helper = {};
+ 
+d3.helper.tooltip = function(){
+    var tooltipDiv;
+    var bodyNode = d3.select('body').node();    
+    var attrs = [];
+    var text = "";
+    var styles = [];
+ 
+    function tooltip(selection) {
+ 
+        selection.on("mouseover", function(d, i){
+
+            var name, value;
+            // Clean up lost tooltips
+            d3.select('body').selectAll('div.tooltip').remove();
+            // Append tooltip
+            tooltipDiv = d3.select('body').append('div');
+            for (var i in attrs) {
+                var name = attrs[i][0];
+                if (typeof attrs[i][1] === "function") {
+                    value = attrs[i][1](d, i);
+                } else value = attrs[i][1];
+                if (name === "class") value += " tooltip";
+                tooltipDiv.attr(name, value);
+            }
+            for (var i in styles) {
+                name = styles[i][0];
+                if (typeof attrs[i][1] === "function") {
+                    value = styles[i][1](d, i);
+                } else value = styles[i][1];
+                tooltipDiv.style(name, value);
+            }
+            var absoluteMousePos = d3.mouse(bodyNode);
+            tooltipDiv.style('left', (absoluteMousePos[0] + 20)+'px')
+                .style('top', (absoluteMousePos[1] - 15)+'px')
+                .style('position', 'absolute') 
+                .style('z-index', 1001);
+            // Add text using the accessor function
+            var tooltipText = '';
+            if (typeof text === "function") tooltipText = text(d, i);
+            else if (typeof text != "undefined" || typeof text != null) tooltipText = text;
+            // Crop text arbitrarily
+            tooltipDiv
+                // .style('width', function(d, i){return (tooltipText.length > 80) ? '300px' : null;})
+                .html(tooltipText);
+        })
+        .on('mousemove', function(d, i) {
+            // Move tooltip
+            var absoluteMousePos = d3.mouse(bodyNode);
+            tooltipDiv.style('left', (absoluteMousePos[0] + 20)+'px')
+                .style('top', (absoluteMousePos[1] - 15)+'px');
+            var tooltipText = '';
+            if (typeof text === "string") tooltipText = text;
+            if (typeof text === "function") tooltipText = text(d, i);
+            tooltipDiv.html(tooltipText);
+        })
+        .on("mouseout", function(d, i){
+            // Remove tooltip
+            tooltipDiv.remove();
+        });
+ 
+    }
+ 
+    tooltip.attr = function(name, value) {
+        attrs.push(arguments);
+        return this;
+    }
+ 
+    tooltip.text = function(value) {
+        text = value;
+        return this;
+    }
+ 
+    tooltip.style = function(name, value) {
+        styles.push(arguments);
+        return this;
+    }
+ 
+    return tooltip;
+};
+
+</script>
