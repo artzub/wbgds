@@ -1,63 +1,78 @@
 <script src="http://use.edgefonts.net/lato.js"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script charset="utf-8" src="http://d3js.org/d3.v3.min.js"></script>
+
 <style>
 
-body {
-  font-family: lato, serif;
-  font-size: 11px;
-  padding: 0;
-  margin: 0;
-}
+    body {
+        font-family: lato, serif;
+        font-size: 11px;
+        padding: 0;
+        margin: 0;
+    }
 
-#chart {
-  width: 740px;
-  float: left;
-}
+    #chart {
+        width: 740px;
+        float: left;
+    }
 
-#sidebar {
-  width: 200px;
-  float: left;
-}
+    #sidebar {
+        width: 200px;
+        float: left;
+    }
 
 
-.axis path,
-.axis line {
-  fill: none;
-  stroke: none;
-  shape-rendering: crispEdges;
-}
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: none;
+        shape-rendering: crispEdges;
+    }
 
-.axis text {
-  font-size: 9px;
-  fill: #999;
-  color: #999;
-}
+    .axis text {
+        font-size: 9px;
+        fill: #999;
+        color: #999;
+    }
 
-.axis .major line {
-  stroke: #ddd;
-}
+    .axis .major line {
+        stroke: #ddd;
+    }
 
-.y.axis .major line {
-  stroke-opacity: .2;
-}
+    .y.axis .major line {
+        stroke-opacity: .2;
+    }
 
-.title{
-  font-size: 1.5em;
-}
+    .title{
+        font-size: 1.5em;
+    }
 
-.country:hover, .legend:hover {
-  cursor: pointer;
-}
+    .country:hover, .legend:hover {
+        cursor: pointer;
+    }
 
-.tooltip {
-  padding: .5em;
-  background: #fff;
-  border: 1px solid #eee;
-  width: 150px;
-  line-height: 1.5em;
-}
+    .tooltip {
+        padding: .5em;
+        background: #fff;
+        border: 1px solid #eee;
+        width: 150px;
+        line-height: 1.5em;
+    }
+
+    .legend rect {
+        fill: none;
+        fill-opacity: 0;
+    }
+
+    .legend:hover rect {
+        fill-opacity: .2;
+    }
+
+    .legend.checked rect {
+        fill-opacity: .4;
+    }
 
 </style>
+
 
 <div id="chart"></div>  
 <div id="sidebar"><h1>Distrubution of Grant Awards in Fiscal Year 2013</h1></div>  
@@ -66,12 +81,21 @@ body {
 <script>
 
 
+"use strict";
+
 /**
  * Vars, Scales, Axies
  */
 
+// ISO metrics for number, but based on current data
+var ISO = {
+    M : Math.pow(10, 3),
+    G : Math.pow(10, 6),
+    T : Math.pow(10, 9)
+};
+
 // Number Formatting
-var th = d3.format(",")
+var th = d3.format(",");
 
 //  Default Color Range
 var color = d3.scale.category20();
@@ -81,12 +105,12 @@ var margin = {top: 10, right: 20, bottom: 20, left: 100},
     height = 600 - margin.top - margin.bottom;
 
 // Y Scale for Contract Amount
-var x = d3.scale.linear()
+var x = d3.scale.pow().exponent(.2)
     .range([10, width]);
 
 // Order Countries on X
 var y = d3.scale.ordinal()
-      .rangeRoundBands([0, height]);    
+    .rangeRoundBands([0, height]);
 
 var yAxis = d3.svg.axis()
     .scale(y)
@@ -96,243 +120,376 @@ var yAxis = d3.svg.axis()
 var xAxis = d3.svg.axis()
     .scale(x)
     .tickSize(-height)
-    .tickFormat(function(d) { return d + "M"; })
+    .tickFormat(function(d) {
+        if (d < ISO.M)
+            d = d + "M";
+        else if (d < ISO.G)
+            d = (d / ISO.M) + "G";
+        else if (d < ISO.T)
+            d = (d / ISO.G) + "T";
+        return d;
+    })
     // .tickFormat(function(d) { return Math.round(d / 1e6) + "M"; })
     .orient("bottom");
+
+
+function tickValues(tks, len) {
+    for (var i = 0; i < len || 0; i++) {
+        var t = (Math.floor(tks[1] / (2 + Math.pow(i, 1.1))) || "").toString(),
+                l = t.length;
+        t = +t.substr(0, 1);
+        t *= Math.pow(10, (l || 1) - 1);
+
+        if (x(t) >= 0)
+        tks = tks.concat([t]).sort(d3.ascending);
+    }
+    return tks;
+}
+
+// Zooming axes
+// http://bl.ocks.org/mbostock/3892928
+function zoomed() {
+    xAxis.tickValues(tickValues(x.ticks([5]), 7));
+    svg.selectAll(".x.axis").call(xAxis);
+    //svg.selectAll(".y.axis").call(yAxis);
+    svg.selectAll(".dot")
+        .style("visibility", function(d) {
+            return x(d.value) > 0 ? null : "hidden";
+        })
+        .attr("cy", function(d) { return y(d["Borrower Country"]) })
+        .attr("cx", function(d) { return x(d.value); });
+}
+
+var zoom = d3.behavior.zoom()
+    .x(x)
+    //.y(y)
+    .scale(0.02)
+    .scaleExtent([0.02, 2])
+    .on("zoom", zoomed);
 
 /**
  * Draw Frame
  */
-var svg = d3.select("#chart").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+var svg = d3.select("#chart")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+            .call(zoom)
+    ;
+
+svg.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .style("opacity", 0);
 
 // Load the data from 2013
+///sites/default/files/data_set/charlene_manuel/
 d3.csv("/sites/default/files/data_set/charlene_manuel/sprint_major-contract-awards-2013.csv", function(error, data) {
 
-  // Convert strings to numbers.
-  data.forEach(function(d) {
-    d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
-  });
+    // Nest Borrower Countries into a new Array
+    var cData = d3.nest()
+        .key(function(d) {
+            // Convert strings to numbers.
+            d.value = parseInt(d["Total Contract Amount (USD)"].substring(1));
 
+            return d["Borrower Country"];
+        })
+        .entries(data)
+        // Filter Countries that has less than 15 contracts
+        .filter(function(d){ return d.values.length > 15 })
+    ;
 
-  // Nest Borrower Countries into a new Array
-  var cData = d3.nest()
-  .key(function(d) { return d["Borrower Country"]; })
-  .entries(data);
+    function value(d) {
+        return d.value;
+    }
 
-  // Filter Countries that has less than 15 contracts
-  cData = cData.filter(function(d){ return d.values.length > 15 })
+    x.domain(d3.extent(data, value)).nice();
+    y.domain(cData.map(function(d) { return d.key; }));
 
-  x.domain(d3.extent(data, function(d) { return d.value; })).nice();
-  y.domain(cData.map(function(d) { return d.key; }));
+    xAxis.tickValues(tickValues(x.ticks([5]), 7));
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + (height + 10) + ")")
+        .call(xAxis)
+        .append("text")
+            .attr("class", "label")
+            .attr("x", width + margin.right)
+            // .attr("dx", 50)
+            .attr("dy", -10)
+            .style("fill", "#666")
+            .style("text-anchor", "end")
+            .text("Total Contract Amount (USD)")
+    ;
 
-  svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + (height+10) + ")")
-    .call(xAxis)
-  .append("text")
-    .attr("class", "label")
-    .attr("x", width)
-    // .attr("dx", 50)
-    .attr("dy", -10)
-    .style("fill", "#666")
-    .style("text-anchor", "end")
-    .text("Total Contract Amount (USD)")
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .selectAll("text")
+        .attr("dy", -3)
+        .style("text-anchor", "end")
+    ;
 
-  svg.append("g")
-      .attr("class", "y axis")
-      .call(yAxis)
-      .selectAll("text")
-      .attr("dy", -3)
-    .style("text-anchor", "end")
-
-
-
-
-
-  // Label for the Filtered Country or Sector.
-  var title = svg.append("text")
-      .attr("class", "title")
-      .attr("x", width/2)
-      .attr("y", height-25)
-      .attr("dy", 25)
-      .style("text-anchor", "middle")
-      .text("");    
+    // Label for the Filtered Country or Sector.
+    var title = svg.append("g")
+        .append("text")
+        .attr("class", "title")
+        .attr("x", width/2)
+        .attr("y", height - 25)
+        .attr("dy", 25)
+        .style("text-anchor", "middle")
+        .text("")
+    ;
 
 /**
 * Draw Dots
 */
-  var country = svg.selectAll(".country")
-      .data(cData, function(d) { return d.key; })
-    .enter().append("g")
-    .attr("class", "country")
-    .on("mouseover", function(d) { filterC(d) }) 
-    .on("mouseout", function(d) { filterOff(d) })
+    // list of filters, which need apply
+    var filterMap = d3.map({});
+
+    var country = svg.append("g")
+        .selectAll(".country")
+        .data(cData, function(d) { return d.key; })
+        .enter()
+        .append("g")
+            .attr("class", "country")
+            //.on("mouseover", filterC)
+            //.on("mouseout", filterOff)
+    ;
     
-  country.selectAll(".dot")
-    .data(function(d) { return d.values; })
-    .enter().append("circle")
-    .attr("class", "dot")
-    .attr("r", 3.5)
-    .attr("cy", function(d) { return y(d["Borrower Country"]) })
-    .attr("cx", function(d) { return x(d.value); })
-    .style("fill", function(d) { return color(d["Major Sector"]); })
-    .style("opacity", .5)
-    // Call tooltip helper to show information about the Contract
-    .call(d3.helper.tooltip()
-      .attr("class", function(d, i) { d["Major Sector"] })
-      .attr("d", "b")
-      .text(function(d, i){
-        return "Country:<b>"+d["Borrower Country"] + "</b><br>Supplier: <b>"+d["Supplier Country"] + "</b><br>Supplied ($): <b>"+th(d.value) + "</b><br>Sector: <b>"+d["Major Sector"]+"</b><br>";}));
+    country.selectAll(".dot")
+        .data(function(d) { return d.values; })
+        .enter()
+        .append("circle")
+            .attr("class", "dot")
+            .attr("r", 3.5)
+            .attr("cy", function(d) { return y(d["Borrower Country"]) })
+            .attr("cx", function(d) { return x(d.value); })
+            .style("fill", function(d) { return color(d["Major Sector"]); })
+            .style("opacity", .5)
+            // Call tooltip helper to show information about the Contract
+            .call(
+                d3.helper.tooltip()
+                    .attr("class", function(d, i) { return d["Major Sector"]; })
+                    .attr("d", "b")
+                    .text(function(d, i){
+                        return [
+                            "Country:<b>",
+                                d["Borrower Country"],
+                            "</b><br>Supplier: <b>",
+                                d["Supplier Country"],
+                            "</b><br>Supplied ($): <b>",
+                                th(d.value),
+                            "</b><br>Sector: <b>",
+                                d["Major Sector"],
+                            "</b><br>"
+                        ].join("");
+                    })
+            )
+    ;
 
 /**
 * Add Legend
 */
+    var info = d3.select("#sidebar")
+        .append("svg")
+            .attr("width", 205)
+            .attr("height", 200)
+            .append("g")
+                .attr("transform", "translate(5,5)")
+    ;
 
-var info = d3.select("#sidebar").append("svg")
-    .attr("width", 205)
-    .attr("height", 200)
-    .append("g")
-    .attr("transform", "translate(5,5)");
+    info.append("text")
+        .attr("dy", ".35em")
+        .style("opacity", .2)
+        .text("Click on an item in order to apply filter");
+
+    var legend = info.selectAll(".legend")
+        .data(color.domain())
+        .enter()
+        .append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) { return "translate(0," + (i + 1) * 18 + ")"; })
+            //.on("mouseover", filterL)
+            //.on("mouseout", filterOff)
+            .on("click", function(d) {
+                var g = d3.select(this);
+                if (g.classed("checked")) {
+                    g.classed("checked", false);
+                    filterMap.remove(d);
+                }
+                else {
+                    g.classed("checked", true);
+                    filterMap.set(d, true);
+                }
+                filterL(d);
+            })
+    ;
+
+    legend.append("rect")
+        .style("fill", color)
+        .attr("height", 18)
+        .attr("y", -9)
+        .attr("x", -7);
 
 
+    legend.append("circle")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("r", 5)
+        .style("fill", color)
+    ;
 
-  var legend = info.selectAll(".legend")
-      .data(color.domain())
-    .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + i * 16 + ")"; })
-      .on("mouseover", function(d) { filterL(d) })
-      .on("mouseout", function(d) { filterOff(d) });
+    legend.append("text")
+        .attr("x", 12)
+        .attr("y", 0)
+        .attr("dy", ".35em")
+        .style("text-anchor", "start")
+        .text(function(d) { return d; })
+    ;
 
-  legend.append("circle")
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", 5)
-      .style("fill", color)
+    function displayLength(node) {
+        return node.clientWidth
+               || node.getComputedTextLength()
+               || node.innerText.length;
+    }
 
-  legend.append("text")
-      .attr("x", 12)
-      .attr("y", 0)
-      .attr("dy", ".4em")
-      .style("text-anchor", "start")
-      .text(function(d) { return d; });
+    legend.shift().forEach(function(g) {
+        g = d3.select(g);
+        g.select("rect")
+            .attr("width",
+                displayLength(g.select("text").node()) + 20)
+        ;
+    });
 
 /**
 * Filter Functions on Hover
 */
-  function filterC(selected) {
-    svg.selectAll(".dot")
-    .style("opacity", .1)
-    .filter(function(d) { return d["Borrower Country"] == selected.key; })
-     .style("opacity", 1)
 
-    title.text(selected.key); 
-  }
+    function filterC(selected) {
+        svg.selectAll(".dot")
+            .style("opacity", .1)
+            .filter(function(d) { return d["Borrower Country"] == selected.key; })
+            .style("opacity", 1);
 
-  function filterL(selected) {
-    svg.selectAll(".dot")
-      .style("opacity", 0)
-      .filter(function(d) { return d["Major Sector"] == selected; })
-      .style("opacity", 1)
+        title.text(selected.key);
+    }
 
-    title.text(selected);  
-  }
+    function filterL(selected) {
+        svg.selectAll(".dot")
+            .style("opacity", 0)
+            .filter(function(d) { return filterMap.has(d["Major Sector"]); })
+            .style("opacity", 1);
 
-  function filterOff(selected) {
-    svg.selectAll(".dot")
-      .style("opacity", .5)
+        //title.text(selected);
+        if (filterMap.keys().length < 1)
+            filterOff();
+    }
 
-    title.text("");
-  }      
+    function filterOff(selected) {
+        svg.selectAll(".dot")
+            .style("opacity", .5);
 
+        title.text("");
+    }
 });
-
-
 
 // Tooltip Helper from 
 // https://gist.github.com/milroc/2975255
 d3.helper = {};
  
 d3.helper.tooltip = function(){
-    var tooltipDiv;
-    var bodyNode = d3.select('body').node();    
-    var attrs = [];
-    var text = "";
-    var styles = [];
+    var tooltipDiv,
+        body = d3.select('body'),
+        attrs = [],
+        text = "",
+        styles = [];
  
     function tooltip(selection) {
- 
-        selection.on("mouseover", function(d, i){
 
-            var name, value;
+        function doText(d, i) {
+            // Crop text arbitrarily
+            tooltipDiv.html(
+                typeof text === "function"
+                ? text(d, i)
+                : typeof text != "undefined" || typeof text != null
+                ? text
+                : ''
+            );
+        }
+
+        function mover(d, i) {
+
+            var key, name, value;
+
             // Clean up lost tooltips
-            d3.select('body').selectAll('div.tooltip').remove();
+            body.selectAll('div.tooltip').remove();
+
             // Append tooltip
-            tooltipDiv = d3.select('body').append('div');
-            for (var i in attrs) {
-                var name = attrs[i][0];
-                if (typeof attrs[i][1] === "function") {
-                    value = attrs[i][1](d, i);
-                } else value = attrs[i][1];
+            tooltipDiv = body.append('div');
+
+            for (key in attrs) {
+                if (!attrs.hasOwnProperty(key))
+                    continue;
+                name = attrs[key][0];
+                if (typeof attrs[key][1] === "function") {
+                    value = attrs[key][1](d, i);
+                } else value = attrs[key][1];
                 if (name === "class") value += " tooltip";
                 tooltipDiv.attr(name, value);
             }
-            for (var i in styles) {
-                name = styles[i][0];
-                if (typeof attrs[i][1] === "function") {
-                    value = styles[i][1](d, i);
-                } else value = styles[i][1];
+            for (key in styles) {
+                if (!styles.hasOwnProperty(key))
+                    continue;
+                name = styles[key][0];
+                if (typeof attrs[key][1] === "function") {
+                    value = styles[key][1](d, i);
+                } else value = styles[key][1];
                 tooltipDiv.style(name, value);
             }
-            var absoluteMousePos = d3.mouse(bodyNode);
-            tooltipDiv.style('left', (absoluteMousePos[0] + 20)+'px')
-                .style('top', (absoluteMousePos[1] - 15)+'px')
-                .style('position', 'absolute') 
+            tooltipDiv.style('position', 'absolute')
                 .style('z-index', 1001);
-            // Add text using the accessor function
-            var tooltipText = '';
-            if (typeof text === "function") tooltipText = text(d, i);
-            else if (typeof text != "undefined" || typeof text != null) tooltipText = text;
-            // Crop text arbitrarily
-            tooltipDiv
-                // .style('width', function(d, i){return (tooltipText.length > 80) ? '300px' : null;})
-                .html(tooltipText);
-        })
-        .on('mousemove', function(d, i) {
+            mm(d, i);
+            doText(d, i);
+        }
+
+        function mm(d, i) {
             // Move tooltip
-            var absoluteMousePos = d3.mouse(bodyNode);
-            tooltipDiv.style('left', (absoluteMousePos[0] + 20)+'px')
+            var absoluteMousePos = d3.mouse(body.node());
+            tooltipDiv
+                .style('left', (absoluteMousePos[0] + 20)+'px')
                 .style('top', (absoluteMousePos[1] - 15)+'px');
-            var tooltipText = '';
-            if (typeof text === "string") tooltipText = text;
-            if (typeof text === "function") tooltipText = text(d, i);
-            tooltipDiv.html(tooltipText);
-        })
-        .on("mouseout", function(d, i){
+            //doText(d, i);
+        }
+
+        function mout(d, i){
             // Remove tooltip
             tooltipDiv.remove();
-        });
+        }
  
+        selection
+                .on("mouseover", mover)
+                .on('mousemove', mm)
+                .on("mouseout", mout);
     }
  
     tooltip.attr = function(name, value) {
         attrs.push(arguments);
         return this;
-    }
+    };
  
     tooltip.text = function(value) {
         text = value;
         return this;
-    }
+    };
  
     tooltip.style = function(name, value) {
         styles.push(arguments);
         return this;
-    }
+    };
  
     return tooltip;
 };
