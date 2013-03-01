@@ -46,6 +46,11 @@
         background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,.1) 100%);
     }
 
+    #sidebar a {
+        display: block;
+        margin-top: -18px;
+        margin-bottom: 5px;
+    }
 
     .axis path,
     .axis line {
@@ -335,8 +340,8 @@ var svg = chart.append("svg")
     ;
 
 // Load the data from 2013
-///sites/default/files/data_set/admin/
-d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
+//d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
+d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
 
     function getAll(a, b) {
         return a.concat(b.values);
