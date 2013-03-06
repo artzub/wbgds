@@ -145,7 +145,7 @@
 <div id="chart"></div>
 <div id="sidebar">
     <h1>Distribution of<br/>Grant Awards in<br/>Fiscal Year 2013</h1>
-    <a href="http://visualizing.org/sprint/launch/" title="fullscreen version" target="_blank">Open in new window</a>
+    <a href="http://visualizing.org/sprint/launch/" id="oinw" title="fullscreen version" target="_blank">Open in new window</a>
 </div>
 
 
@@ -170,6 +170,8 @@ var mode = {
     Packages : 1,
     Chords : 2
 };
+
+d3.select("#oinw").attr("href", document.location);
 
 var vis = initVis();
 
@@ -395,8 +397,8 @@ var svg = chart.append("svg")
         ;
 
 // Load the data from 2013
-//d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
-d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
+d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
+//d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
 
     function getAll(a, b) {
         return a.concat(b.values);
