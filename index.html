@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>World Bank Global Development Sprint</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script></head>
+    <!-- https://dl-web.dropbox.com/spa/6x4vg7uwuzglgh3/wbgds/public/index.html -->
+<body>
+
+<script src="http://use.edgefonts.net/lato.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+
+    body {
+        font-family: lato, serif;
+        font-size: 11px;
+        padding: 0;
+        margin: 0;
+    }
+
+    #chart {
+        margin-left: 40px;
+        margin-top: 20px;
+        width: 780px;
+        float: left;
+    }
+
+    .chord path {
+        fill-opacity: .67;
+        stroke: #000;
+        stroke-width: .5px;
+    }
+
+</style>
+
+<div id="chart"></div>
+
+
+<script>
+
+
+    d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, doekoe) {
+//d3.csv("sprint_major-contract-awards-2013.csv", function(error, doekoe) {
+
+        function isExists(obj) { return typeof(obj) != 'undefined' && obj != null };
+
+
+        doekoe.forEach(function(d) {
+            d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
+        });
+
+        var  supplierNamen = d3.keys(d3.nest()
+                .key(function(d) { return d["Supplier Country"]; })
+                .map(doekoe));
+
+        var  borrowerNamen = d3.keys(d3.nest()
+                .key(function(d) { return d["Borrower Country"]; })
+                .map(doekoe));
+
+        var allNamen = d3.merge(supplierNamen, borrowerNamen);
+
+        var sommenDoekoe = d3.nest()
+                .key(function(d) { return d["Supplier Country"]; })
+                .key(function(d) { return d["Borrower Country"]; })
+                .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
+                .map(doekoe);
+
+
+// console.log(sommenDoekoe["Albania"]["Kosovo"]);
+
+
+//console.log(isExists(sommenDoekoe["Afghanistan"]));
+
+
+
+        var slegsNommers = [];
+
+        for (i=0;i<supplierNamen.length;i++) {
+
+            if (isExists(sommenDoekoe[supplierNamen[i]])) {
+
+                var kettingVar = [];
+
+                for (j=0;j<supplierNamen.length;j++) {
+
+                    //          console.log(sommenDoekoe[supplierNamen[i]][borrowerNamen[j]]);
+
+                    if (isExists(sommenDoekoe[supplierNamen[i]][supplierNamen[j]])) {
+
+                        //      console.log(sommenDoekoe[supplierNamen[i]][borrowerNamen[j]]);
+
+                        kettingVar.push(sommenDoekoe[supplierNamen[i]][supplierNamen[j]]);
+                    }
+                    else {
+                        kettingVar.push(0);
+                    }
+//    console.log(kettingVar);
+                }
+                slegsNommers.push(kettingVar);
+            }
+        }
+
+        console.log(slegsNommers);
+
+
+
+        var width = 760,
+                height = 760,
+                innerRadius = Math.min(width, height) * .31,
+                outerRadius = innerRadius * 1.1;
+
+        var chord = d3.layout.chord()
+                .padding(.02)
+            //   .sortSubgroups(d3.descending)
+                .matrix(slegsNommers);
+
+        var fill = d3.scale.category20();//ordinal()
+//    .domain(d3.range(...))
+//    .range(["#000000", #F26223"]);
+
+        var svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+
+        svg.append("g")
+                .selectAll("path")
+                .data(chord.groups)
+                .enter().append("path")
+                .style("fill", function(d) { return fill(d.index); })
+                .style("stroke", function(d) { return fill(d.index); })
+                .attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+                .on("mouseover", fade(.1))
+                .on("mouseout", fade(1));
+
+        var ticks = svg.append("g")
+                .selectAll("g")
+                .data(chord.groups)
+                .enter().append("g")
+
+        ticks.append("text")
+                .each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+                .attr("dy", ".35em")
+                .attr("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+                .attr("transform", function(d) {
+                    return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+                            + "translate(" + (innerRadius + 45) + ")"
+                            + (d.angle > Math.PI ? "rotate(180)" : "");
+                })
+                .text(function(d) { return supplierNamen[d.index]; })
+                .on("mouseover", fade(.1))
+                .on("mouseout", fade(1));
+
+
+        svg.append("g")
+                .attr("class", "chord")
+                .selectAll("path")
+                .data(chord.chords)
+                .enter().append("path")
+                .style("fill", function(d) { return fill(d.target.index); })
+                .attr("d", d3.svg.chord().radius(innerRadius))
+                .style("opacity", 1);
+
+// Het faden van de koorden wordt hier geregeld.
+        function fade(opacity) {
+            return function(g, i) {
+                svg.selectAll("g.chord path")
+                        .filter(function(d) {
+                            return d.source.index != i && d.target.index != i;
+                        })
+                        .transition()
+                        .style("opacity", opacity);
+            };
+        }
+    });
+
+
+</script>
+
+</body>
+</html>
