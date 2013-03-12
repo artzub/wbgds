@@ -133,13 +133,13 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 
     var sumData = d3.nest()
             .key(function(d) { return d["Borrower Country"]; })
-            .key(function(d) { return d["Procurement Type"]; })
+            .key(function(d) { return d["Procurement Category"]; })
             .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
             .entries(data);
 
     var samData = d3.nest()
             .key(function(d) { return d["Borrower Country"]; })
-            .key(function(d) { return d["Procurement Type"]; })
+            .key(function(d) { return d["Procurement Category"]; })
             .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
             .map(data);
 
@@ -231,13 +231,13 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
             .attr("r", 3.5)
 //    .attr("cy", function(d) { return y(d["Borrower Country"]) })  --> easier to space the country g's on the y-axis
             .attr("cx", function(d) { return x(d.value); })
-            .style("fill", function(d) { return color(d["Procurement Type"]); })
+            .style("fill", function(d) { return color(d["Procurement Category"]); })
 
 //    .style("fill", function(d) { return color(d["Major Sector"]); })
             .style("opacity", .5)
         // Call tooltip helper to show information about the Contract
             .call(d3.helper.tooltip()
-                    .attr("class", function(d, i) { d["Procurement Type"] })
+                    .attr("class", function(d, i) { d["Procurement Category"] })
                     .attr("d", "b")
                     .text(function(d, i){
                         return [
@@ -248,7 +248,7 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
                             "</b><br>Supplied ($): <b>",
                             th(d.value),
                             "</b><br>Sector: <b>",
-                            d["Procurement Type"],
+                            d["Procurement Category"],
                             "</b><br>"
                         ].join("");
                     })
@@ -314,7 +314,7 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 
         svg.selectAll(".dot")
                 .style("opacity", 0)
-                .filter(function(d) { return d["Procurement Type"] == selected; })
+                .filter(function(d) { return d["Procurement Category"] == selected; })
                 .style("opacity", 1)
 
         country.selectAll(".sums")
