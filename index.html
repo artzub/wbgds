@@ -1,5 +1,7 @@
 <script src="http://use.edgefonts.net/lato.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<!--<script src="http://d3js.org/topojson.v0.min.js"></script>-->
+
 <style>
 
     body {
@@ -18,7 +20,6 @@
         width: 200px;
         float: left;
     }
-
 
     .axis path,
     .axis line {
@@ -57,13 +58,14 @@
         line-height: 1.5em;
     }
 
+
 </style>
 
 <div id="chart"></div>
-<div id="sidebar"><h1>Distrubution of Grant Awards in Fiscal Year 2013</h1></div>
-
+<div id="sidebar"><h1>Distribution of Grant Awards in Fiscal Year 2013</h1></div>
 
 <script>
+
 
 
 /**
@@ -100,6 +102,7 @@ var xAxis = d3.svg.axis()
         .tickFormat(function(d) { return Math.round(d / 1e6) + "M"; })
         .orient("bottom");
 
+
 /**
  * Draw Frame
  */
@@ -109,15 +112,17 @@ var svg = d3.select("#chart").append("svg")
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+
+
 // Load the data from 2013
-//d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
-d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
+d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
+//d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
 
     data.forEach(function(d) {
         d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
     });
 
-
+//console.log(data);
 
 
     var cData = d3.nest()
@@ -128,19 +133,38 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
 
     var sumData = d3.nest()
             .key(function(d) { return d["Borrower Country"]; })
-            .key(function(d) { return d["Major Sector"]; })
+            .key(function(d) { return d["Procurement Type"]; })
             .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
             .entries(data);
 
     var samData = d3.nest()
             .key(function(d) { return d["Borrower Country"]; })
-            .key(function(d) { return d["Major Sector"]; })
+            .key(function(d) { return d["Procurement Type"]; })
             .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
             .map(data);
 
 
+    var sumsamData = d3.nest()
+            .key(function(d) { return d["Borrower Country"]; })
+            .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
+            .map(data);
+
+    console.log(samData);
+    console.log(sumsamData);
+
+
+//var kaleData = sumsamData.map(function(d) { return d });
+//console.log(d3.extent(kaleData, function(d) { return d; }));
+
     x.domain(d3.extent(data, function(d) { return d.value; })).nice();
     y.domain(cData.map(function(d) { return d.key; }));
+
+
+    var sOmAs = d3.scale.linear()//.domain(d3.extent(sumsamData, function(d) { return d; } ))
+            .domain([5000, 300000000]).range(["white", "red"]);
+
+    console.log(sOmAs(1000000));
+
 
     svg.append("g")
             .attr("class", "x axis")
@@ -207,11 +231,13 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
             .attr("r", 3.5)
 //    .attr("cy", function(d) { return y(d["Borrower Country"]) })  --> easier to space the country g's on the y-axis
             .attr("cx", function(d) { return x(d.value); })
-            .style("fill", function(d) { return color(d["Major Sector"]); })
+            .style("fill", function(d) { return color(d["Procurement Type"]); })
+
+//    .style("fill", function(d) { return color(d["Major Sector"]); })
             .style("opacity", .5)
         // Call tooltip helper to show information about the Contract
             .call(d3.helper.tooltip()
-                    .attr("class", function(d, i) { d["Major Sector"] })
+                    .attr("class", function(d, i) { d["Procurement Type"] })
                     .attr("d", "b")
                     .text(function(d, i){
                         return [
@@ -222,7 +248,7 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
                             "</b><br>Supplied ($): <b>",
                             th(d.value),
                             "</b><br>Sector: <b>",
-                            d["Major Sector"],
+                            d["Procurement Type"],
                             "</b><br>"
                         ].join("");
                     })
@@ -233,7 +259,7 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
             .attr("x", width-margin.right/2)
             .style("fill", "black")
             .style("font-size", "10px")
-            .text(function(d) { return Math.round(d3.sum(d3.values(samData[d.key]))/1e6); })
+            .text(function(d) { return Math.round(d3.sum(d3.values(samData[d.key]))) == NaN ? 0 : Math.round(d3.sum(d3.values(samData[d.key]))/1e6); })
 
     /*
      Add Legend
@@ -273,6 +299,7 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
      */
 
     function filterC(selected) {
+
         svg.selectAll(".dot")
                 .style("opacity", .1)
                 .filter(function(d) { return d["Borrower Country"] == selected.key; })
@@ -287,11 +314,11 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
 
         svg.selectAll(".dot")
                 .style("opacity", 0)
-                .filter(function(d) { return d["Major Sector"] == selected; })
+                .filter(function(d) { return d["Procurement Type"] == selected; })
                 .style("opacity", 1)
 
         country.selectAll(".sums")
-                .text(function(d) { return Math.round(samData[d.key][selected]/1e6); })
+                .text(function(d) { return isNaN(Math.round(samData[d.key][selected]/1e6)) ? "0" : Math.round(samData[d.key][selected]/1e6); })
 
         title.text(selected);
     }
@@ -308,6 +335,7 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
     }
 
 });
+
 
 
 
@@ -394,5 +422,7 @@ d3.helper.tooltip = function(){
 
     return tooltip;
 };
+
+
 
 </script>
