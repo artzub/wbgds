@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>World Bank Global Development Sprint</title>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script></head>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+</head>
     <!-- https://dl-web.dropbox.com/spa/6x4vg7uwuzglgh3/wbgds/public/index.html -->
 <body>
 
@@ -10,6 +12,8 @@
 <!--<script src="http://use.edgefonts.net/lato.js"></script>-->
 <!--<script charset="utf-8" src="http://d3js.org/d3.v3.min.js"></script>-->
 <script charset="utf-8" src="http://d3js.org/d3.v3.js"></script>
+<!--<script charset="utf-8" src="https://raw.github.com/artzub/d3-plugins/master/sankey/sankey.js"></script>-->
+<script charset="utf-8" src="http://artzub.com/sankey.js"></script>
 
 <style>
 
@@ -23,7 +27,7 @@
     }
 
     body {
-        font-family: lato, serif;
+        font-family: serif;
         font-size: 11px;
 
         background: url('data:image/png;base64,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');
@@ -101,6 +105,7 @@
         border: 1px solid #eee;
         width: 150px;
         line-height: 1.5em;
+        box-shadow: 0 0 8px rgba(0, 0, 0, .5);
     }
 
     .legend text {
@@ -139,13 +144,33 @@
         fill-opacity: .05;
     }
 
+    .sankey .node {
+        cursor: move;
+    }
+
+    .sankey .node rect {
+        fill-opacity: .9;
+        shape-rendering: crispEdges;
+    }
+
+    .sankey .node text {
+        pointer-events: none;
+        text-shadow: 0 1px 0 #fff;
+    }
+
+    .sankey .link {
+        fill: none;
+        stroke: #000;
+        stroke-opacity: .3;
+    }
+
 </style>
 
 
 <div id="chart"></div>
 <div id="sidebar">
     <h1>Distribution of<br/>Grant Awards in<br/>Fiscal Year 2013</h1>
-    <a href="http://visualizing.org/sprint/launch/" id="oinw" title="fullscreen version" target="_blank">Open in new window</a>
+    <a href="http://visualizing.org/sprint/launch/" id="oinw" title="fullscreen version" target="_blank">Open in a new window</a>
 </div>
 
 
@@ -168,7 +193,8 @@ var ISO = {
 var mode = {
     Particles : 0,
     Packages : 1,
-    Chords : 2
+    Chords : 2,
+    Sankeys : 3
 };
 
 d3.select("#oinw").attr("href", document.location);
@@ -208,7 +234,7 @@ var pack =  d3.layout.pack()
 
 // The chord layout, for computing the angles of chords and groups.
 var chord = d3.layout.chord()
-        //.sortGroups(d3.descending)
+        //.sortGroups(undefined)
         //.sortSubgroups(d3.descending)
         //.sortChords(d3.descending)
         .padding(.01);
@@ -219,7 +245,7 @@ var x = d3.scale.log()
 
 // Order Countries on X
 var y = d3.scale.ordinal()
-        .rangeRoundBands([margin.top, height]);
+        .rangeRoundBands([margin.top/2, height]);
 
 var yAxis = d3.svg.axis()
         .scale(y)
@@ -414,15 +440,21 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
         type : -1,
         values: d3.nest()
             .key(function(d) {
-                d = vis.dataItem(d);
-
                 return d.borrower.shortName;
             })
             .key(function(d) {
                 color(d.sector);
                 return d.sector;
             })
-            .entries(data)
+            .entries(data.sort(function(a, b) {
+                if (!a.supplier)
+                    a = vis.dataItem(a);
+
+                if (!b.supplier)
+                    b = vis.dataItem(b);
+
+                return d3.ascending(a.borrower.shortName, b.borrower.shortName);
+            }))
         // Filter Countries that has less than 15 contracts
             .filter(function(d){
                 d.type = 1;
@@ -433,7 +465,9 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
                 }, 0) > 15;
 
                 t && d.values.forEach(function(b) {
+                    b.type = 2;
                     vis.chord.initMatrix(b.values);
+                    vis.sankey.initLinks(b.values);
                 });
                 return t;
             })
@@ -458,12 +492,38 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
             .text("Total Contract Amount (USD)")
     ;
 
+    function fade(opt) {
+        return function(d) {
+            countryPoints.filter(function(k) {
+                return k.type || k.borrower.shortName != d;
+            })
+            .transition()
+            .style("opacity", opt);
+        }
+    }
+
+    function fadeDot(opt) {
+        return function(d) {
+            if (currentMode == mode.Packages)
+                return;
+            countryPoints.filter(function(k) {
+                return k.borrower != d.borrower;
+            })
+            .transition()
+            .style("opacity", opt);
+        }
+    }
+
     svg.append("g")
             .attr("class", "y axis")
             .call(yAxis)
             .selectAll("text")
-            .attr("dy", "-.6em")
+            .on("mouseover", fade(.1))
+            .on("mouseout", fade(1))
+            .attr("dy", '-.6em')
+            .style("cursor", "pointer")
             .style("text-anchor", "end")
+            .style("font-size", "8px")
     ;
 
     // Label for the Filtered Country or Sector.
@@ -493,6 +553,8 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
             .enter()
             .append("g")
             .attr("class", "dot")
+            .on("mouseover", fadeDot(.1))
+            .on("mouseout", fadeDot(1))
         // Call tooltip helper to show information about the Contract
             .call(vis.tooltip)
     ;
@@ -532,6 +594,28 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
             .style("opacity", .2)
             .text("Click on items in order to apply filter");
 
+    function modeClick(d) {
+        var g = d3.select(this);
+        var tr = g.classed("checked");
+        d3.select(this.parentNode)
+                .selectAll(".itemType")
+                .classed("checked", false);
+        g.classed("checked", true);
+
+        currentMode = mode[d];
+
+        // save cur state
+        if (currentMode != mode.Packages) {
+            zfn.s = zoomPack.scale();
+            zfn.t = correctTranslate(zoomPack.translate(), zfn.s);
+        }
+
+        // change zooming
+        svg.call(currentMode == mode.Packages ? zoomPack : currentMode == mode.Particles ? zoom : clearZoom);
+
+        filterL(!tr);
+    }
+
     [{
         values : color.domain(),
         sclass : ".legend",
@@ -552,30 +636,10 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
     }, {
         values : d3.keys(mode),
         sclass : ".legend.itemType",
-        classes : function(d, i) { return "legend itemType" + (d == "Particles" ? " checked" : "");  },
+        classes : function(d, i) { return "legend itemType" + (d == "Sankeys" ? " checked" : "");  },
         c : "#888",
         tr : function(d, i) { return "translate(0," + (hs - (i + 1) * 18) + ")"; },
-        click : function(d) {
-            var g = d3.select(this);
-            var tr = g.classed("checked");
-            d3.select(this.parentNode)
-                    .selectAll(".itemType")
-                    .classed("checked", false);
-            g.classed("checked", true);
-
-            currentMode = mode[d];
-
-            // save cur state
-            if (currentMode != mode.Packages) {
-                zfn.s = zoomPack.scale();
-                zfn.t = correctTranslate(zoomPack.translate(), zfn.s);
-            }
-
-            // change zooming
-            svg.call(currentMode == mode.Packages ? zoomPack : currentMode == mode.Particles ? zoom : clearZoom);
-
-            filterL(!tr);
-        }
+        click : modeClick
     }].forEach(function(item) {
                 var legend = info.selectAll(item.sclass)
                                 .data(item.values)
@@ -658,14 +722,22 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
         if (vis.filterMap.keys().length < 1)
             filterOff(selected);
 
-        country.style("display", currentMode == mode.Chords ? "none" : null);
+        country.style("display", currentMode == mode.Chords || currentMode == mode.Sankeys ? "none" : null);
 
         zoomed(selected);
 
-        if (currentMode == mode.Chords)
+        if (currentMode == mode.Chords) {
+            vis.sankey.hide();
             vis.chord.show().draw(svg, chord, width + margin.left, height);
-        else
+        }
+        else if (currentMode == mode.Sankeys) {
             vis.chord.hide();
+            vis.sankey.show().draw(svg, null, width + margin.left, height);
+        }
+        else {
+            vis.sankey.hide();
+            vis.chord.hide();
+        }
     }
 
     function filterOff(selected) {
@@ -677,6 +749,9 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 
         title.text("");
     }
+
+    var chm = d3.select(".legend.itemType.checked");
+    modeClick.call(chm.node(), chm.datum());
 });
 
 var rsTimer;
@@ -706,8 +781,8 @@ function resize() {
     zl.attr("width", widthFull)
             .attr("height", heightFull);
 
-    x.range([margin.top, width]);
-    y.rangeRoundBands([margin.top, height]);
+    x.range([margin.top, width]).nice();
+    y.rangeRoundBands([margin.top/2, height]);
 
     svg.selectAll(".x.axis")
             .call(xAxis.tickSize(-height))
@@ -716,7 +791,10 @@ function resize() {
             .attr("dx", width + margin.right/2);
 
     svg.selectAll(".y.axis")
-            .call(yAxis.tickSize(-width));
+            .call(yAxis.tickSize(-width))
+            .selectAll("text")
+            .attr("dy", '-.6em')
+    ;
 
     pack && root && pack.size([width + margin.left, height]).nodes(root);
 
@@ -728,6 +806,8 @@ function resize() {
     zoomed();
     if (currentMode == mode.Chords)
         vis.chord.show().draw(svg, chord, width + margin.left, height);
+    else if (currentMode == mode.Sankeys)
+        vis.sankey.show().draw(svg, null, width + margin.left, height);
 }
 
 // Resize behavior
@@ -896,6 +976,8 @@ function initVis() {
         , countriesCounter = 0
         ;
 
+    var filterMap = d3.helper.mapExt({});
+
     /**
      * Initialisation Data
      */
@@ -929,7 +1011,10 @@ function initVis() {
             key: key,
             name: value,
             shortName: value.split(',')[0],
-            id: countriesCounter++
+            id: countriesCounter++,
+            toString : function(full) {
+                return full ? this.name : this.shortName;
+            }
         });
         return countriesByIndex[c.id] = c;
     }
@@ -951,17 +1036,21 @@ function initVis() {
 
     function initProject(d) {
         return {
-            line : d['Product line'],
-            name : d['Product name'],
-            id : d['Product ID']
+            name : d['Project Name'],
+            id : d['Project ID'],
+            toString : function() {
+                return this.name;
+            }
         };
     }
 
-    function value() {
-        return this.basevalue;
+    function check(d) {
+        return filterMap.length < 1 || filterMap.has(d.sector);
     }
 
-    var filterMap = d3.helper.mapExt({});
+    function value() {
+        return check(this) ? this.basevalue : 0;
+    }
 
     return {
         filterMap : filterMap,
@@ -970,18 +1059,17 @@ function initVis() {
             .attr("d", "b")
             .text(function(d, i){
                 return [
-                    d.type != -1 ? "Country: <b>" : "",
+                    d.type != -1 ? "Borrower: <b>" : "",
                     d.type == 1 ? d.key : d.type == 2 ? d.values[0].borrower.name : !d.type ? d.borrower.name : "",
-                    !d.type ? "</b><br>Supplier: <b>" : "",
-                    !d.type ? d.supplier.name : "",
-                    "</b><br>",
+                    !d.type ? "</b><br>Supplier: <b>" + d.supplier.name : "",
+                    d.type == 2 || !d.type ? "</b><br>Sector: <b>" : "",
+                    d.type == 2 ? d.key : !d.type ? d.sector : "",
+                    !d.type ? "</b><br/>Project: <b>(" + d.project.id + ") " + d.project.name : "",
+                    "</b><br/><br/>",
                     !d.type ? "Supplied" : "Borrowed",
                     " ($): <b>",
                     th(d.value),
-                    "M",
-                    d.type == 2 || !d.type ? "</b><br>Sector: <b>" : "",
-                    d.type == 2 ? d.key : !d.type ? d.sector : "",
-                    "</b><br>"
+                    "M.</b><br>"
                 ].join("");
         }),
         dataItem : function(d) {
@@ -992,6 +1080,7 @@ function initVis() {
             d.borrower = initCounty(d["Borrower Country Code"], d["Borrower Country"]);
             d.supplier = initCounty(d["Supplier Country Code"], d["Supplier Country"]);
             d.sector = d["Major Sector"];
+            d.product = d['Product line'];
             d.procurement = initProcurement(d);
             d.contract = initContract(d);
             d.year = d['Fiscal Year'];
@@ -1022,24 +1111,25 @@ function initVis() {
                         result = [
                             "Country: <b>",
                             countriesCorByIndex[d.index].shortName,
-                            "</b><br/>Supplied ($): <b>",
+                            "</b><br/><br/>Supplied ($): <b>",
                             th(Math.floor(d.value)) + "M.</b><br/>"
                         ];
                     }
                     else {
                         d = d.source.value;
                         result = [
-                            "Country: <b>",
+                            "Supplier: <b>",
                             d.supplier.shortName,
-                            "</b><br/>Supplied ($): <b>",
-                            th(+d),
-                            "M.</b><br/>Borrower: <b>",
+                            "</b><br/>Borrower: <b>",
                             d.borrower.shortName,
                             "</b><br/>Sector: <b>",
                             d.sector,
                             "</b><br/>Number of projects: <b>",
                             d.values.length,
+                            "</b><br/><br/>Supplied ($): <b>",
+                            th(+d),
                             "</b><br/>"
+
                         ];
                     }
                     return result.join("");
@@ -1055,10 +1145,6 @@ function initVis() {
                 return c;
             }
 
-            function check(d) {
-                return filterMap.length < 1 || filterMap.has(d.sector);
-            }
-
             function filterChord(d) {
                 var t = false,
                     n = d.source.value && d.source.value.values.length;
@@ -1066,10 +1152,6 @@ function initVis() {
                     if (t = check(d.source.value.values[n]))
                         break;
                 return t;
-            }
-
-            function value() {
-                return check(this) ? this.basevalue : 0;
             }
 
             function valueBase() {
@@ -1156,6 +1238,10 @@ function initVis() {
                 return d3.ascending((a.source.value + a.target.value) / 2, (b.source.value + b.target.value) / 2);
             }
 
+            function sortGroups(a, b) {
+                return d3.ascending(groupText(a), groupText(b));
+            }
+
             function initChord(d) {
                 var r = d.source.endAngle - d.source.startAngle
                     , m
@@ -1204,6 +1290,8 @@ function initVis() {
 
                 m.enter()
                     .append("path")
+                    .on("mouseover", fadeChord(.1))
+                    .on("mouseout", fadeChord(1))
                     .call(tooltip)
                     .attr("class", "itemChord")
                     .style("fill", fill)
@@ -1230,12 +1318,23 @@ function initVis() {
             }
 
             // Returns an event handler for fading a given chord group.
-            function fade(opacity) {
+            function fade(opt) {
                 return function(g, i) {
                     chords.selectAll("path")
-                            .filter(function(d) { return d.source.index != i && d.target.index != i; })
+                        .filter(function(d) { return d.source.index != i && d.target.index != i; })
+                        .transition()
+                        .style("opacity", opt);
+                };
+            }
+
+            function fadeChord(opt) {
+                return function(g) {
+                    var sector = g.source.value.sector;
+
+                    chords.selectAll("path")
+                            .filter(function(d) { return d.source.value.sector != sector; })
                             .transition()
-                            .style("opacity", opacity);
+                            .style("opacity", opt);
                 };
             }
 
@@ -1302,7 +1401,7 @@ function initVis() {
 
 
                     // The arc generator, for the groups.
-                    arc = d3.svg.arc()
+                    (arc || (arc = d3.svg.arc()))
                         .innerRadius(r0)
                         .outerRadius(r1);
 
@@ -1313,7 +1412,7 @@ function initVis() {
                     // Compute the chord layout.
                     layout.matrix(matrix);
 
-                    layout.sortGroups(layout.sortGroups());
+                    layout.sortGroups(undefined);
 
                     (g || (g = svg.append("g")))
                         .attr("transform", "translate(" + [w/2, h/2 + margin.top] + ")");
@@ -1364,6 +1463,281 @@ function initVis() {
                     groups.call(updGroup);
 
                     return this;
+                },
+                show : function() {
+                    g && g.style("display", null);
+                    return this;
+                },
+                hide : function() {
+                    g && g.style("display", "none");
+                    return this;
+                }
+            }
+        })(),
+        sankey : (function(){
+            var typeLink = {
+                    ss: 0, // supplier - sector
+                    sb: 1, // borrower - sector
+                    bp: 2  // sector - project
+                },
+                typeNode = {
+                    c : '_c_',
+                    cb : '_cb_',
+                    s : '_s_',
+                    p : '_p_'
+                }
+            ;
+
+
+            var nodes = d3.helper.mapExt({}),
+                links = [];
+
+            var _layout;
+
+            var tooltip = d3.helper.tooltip()
+                .attr("class", function(d, i) { return 't'; })
+                .attr("d", "b")
+                .text(function(d){
+                    var result = [];
+
+                    if (d.hasOwnProperty("nodeValue")) {
+                        result = [
+                            d.type == typeNode.c || d.type == typeNode.cb
+                                ? "Country "
+                                : d.type == typeNode.s
+                                ? "Sector "
+                                : "Project ",
+                            ":  <b>",
+                            d.nodeValue.toString(),
+                            d.type == typeNode.p ? "</b><br/>ID: <b>" + d.nodeValue.id : "",
+                            "</b></br><br/>",
+                            d.type == typeNode.c
+                                ? "Supplied "
+                                : d.type == typeNode.cb
+                                ? "Borrowed "
+                                : "Money ",
+                            "($): <b>",
+                            th(Math.floor(d.value)),
+                            "M.</b><br/>"
+                        ];
+                    }
+                    else {
+                        result = [
+                            "Supplier: <b>",
+                            d.linkValue.supplier.shortName,
+                            "</b><br/>Borrower: <b>",
+                            d.linkValue.borrower.shortName,
+                            "</b><br/>Sector: <b>",
+                            d.linkValue.sector,
+                            "</b><br/>Project: <b>",
+                            "(" + d.linkValue.project.id + ") ",
+                            d.linkValue.project.name,
+                            "</b><br/><br/>Supplied ($): <b>",
+                            th(d.value()),
+                            "M.</b><br/>"
+                        ];
+                    }
+                    return result.join("");
+                })
+            ;
+
+            function appendNode(d, key, type) {
+                var node = nodes.get(key);
+                if (!node) {
+                    nodes.set(key, node = {
+                        type : type,
+                        key : key,
+                        nodeValue : d
+                    });
+                }
+                return node;
+            }
+
+            function appendLinks(d) {
+                var f = /*d.supplier == d.borrower ? (function(d){ return function(k) { return d/2; } })(d) : */value.bind(d);
+
+                links.push({
+                    source : appendNode(d.supplier, typeNode.c + d.supplier.key, typeNode.c),
+                    target : appendNode(d.sector, typeNode.s + d.sector, typeNode.s),
+                    type : typeLink.ss,
+                    value : f,
+                    linkValue : d
+                });
+
+                links.push({
+                    source : appendNode(d.sector, typeNode.s + d.sector, typeNode.s),
+                    target : appendNode(d.borrower, typeNode.cb + d.borrower.key, typeNode.cb),
+                    type : typeLink.sb,
+                    value : f,
+                    linkValue : d
+                });
+
+                links.push({
+                    source : appendNode(d.borrower, typeNode.cb + d.borrower.key, typeNode.cb),
+                    target : appendNode(d.project, typeNode.p + d.project.id, typeNode.p),
+                    type : typeLink.bp,
+                    value : f,
+                    linkValue : d
+                });
+            }
+
+            function dragMove(d) {
+                d3.select(this)
+                    .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
+                _layout.relayout();
+                link.attr("d", path);
+            }
+
+            function checkByType(l, n) {
+                var type = n.type;
+                return type == typeNode.cb
+                        ? l.linkValue.borrower.key != n.nodeValue.key
+                        : type == typeNode.c
+                        ? l.linkValue.supplier.key != n.nodeValue.key
+                        : type == typeNode.s
+                        ? l.linkValue.sector != n.nodeValue
+                        : l.linkValue.project.id != n.nodeValue.id;
+            }
+
+            function fadeNode(opt) {
+                return function(n) {
+                    link.filter(function(l) {
+                            return checkByType(l, n);
+                        })
+                        .transition()
+                        .style("opacity", opt);
+                }
+            }
+
+            function fadeLink(opt) {
+                return function(l) {
+                    link.filter(function(ls) {
+                        return ls.linkValue != l.linkValue;
+                    })
+                    .transition()
+                    .style("opacity", opt);
+
+                    node.filter(function(n) {
+                        return checkByType(l, n);
+                    })
+                    .transition()
+                    .style("opacity", opt);
+                }
+            }
+
+            var g, g1, g2,
+                node, link, path;
+
+            return {
+                initLinks : function(values) {
+                    values.forEach(appendLinks);
+                    return this;
+                },
+                draw : function(svg, layout, w, h) {
+
+                    var workNodes = d3.map({}),
+                        workLinks = links.filter(function(d) {
+                            var r =  d.value() > 0;
+                            r = r && (filterMap.length > 0 || d.type != typeLink.bp);
+                            if (r) {
+                                if (!workNodes.has(d.source.key))
+                                    workNodes.set(d.source.key, d.source);
+                                if (!workNodes.has(d.target.key))
+                                    workNodes.set(d.target.key, d.target);
+                            }
+                            return r;
+                        });
+
+
+                    (_layout = layout || _layout || d3.sankey().nodeWidth(8).nodePadding(4))
+                        .links(workLinks)
+                        .nodes(workNodes.values())
+                        .size([w, h - margin.top/2])
+                        .layout(32)
+                    ;
+
+                    tooltip.spaceHeight(h).spaceWidth(w);
+
+                    path = path || _layout.link();
+                    (g || (g = svg.append("g").attr("class", "sankey")))
+                        .attr('transform', 'translate(' + [margin.right/3, margin.top/2] + ')');
+                    g1 = g1 || g.append("g");
+                    g2 = g2 || g.append("g");
+
+                    g1.selectAll(".link").remove();
+
+                    link = g1.selectAll(".link")
+                        .data(_layout.links());
+
+                    link.enter()
+                        .append("path")
+                        .call(tooltip)
+                        .attr("class", "link")
+                        .on("mouseover", fadeLink(.03))
+                        .on("mouseout", fadeLink(1))
+                    ;
+
+                    link.attr("d", path)
+                        .style('stroke', function(d) {
+                            return color(d.linkValue.sector);
+                        })
+                        .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+                        .sort(function(a, b) { return b.dy - a.dy; })
+                    ;
+
+                    g2.selectAll(".node").remove();
+
+                    node = g2.selectAll(".node")
+                        .data(_layout.nodes(), function(d) {
+                            return d.key;
+                        })
+                    ;
+
+                    node.enter()
+                        .append("g")
+                        .attr("class", "node")
+                        .call(tooltip)
+                        .on("mouseover", fadeNode(0.03))
+                        .on("mouseout", fadeNode(1))
+                        .call(d3.behavior.drag()
+                            .origin(function(d) { return d; })
+                            .on("dragstart", function() { this.parentNode.appendChild(this); })
+                            .on("drag", dragMove))
+                        .call(function(g) {
+                            g.append("rect")
+                                .style("fill", function(d) {
+                                    return d.color = d.type == typeNode.c || d.type == typeNode.cb
+                                        ? 'rgba(236, 246, 255, 1)'
+                                        : d.type == typeNode.p
+                                        ? 'rgba(246, 236, 255, 1)'
+                                        : color(d.nodeValue);
+                                })
+                                .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
+                            ;
+
+                            g.append("text")
+                                .attr("x", -6)
+                                .attr("dy", ".35em")
+                                .attr("text-anchor", "end")
+                                .attr("transform", null)
+                                .text(function(d) { return d.nodeValue.toString(); })
+                                .filter(function(d) { return d.x < w / 2; })
+                                .attr("x", 6 + _layout.nodeWidth())
+                                .attr("text-anchor", "start")
+                            ;
+                        })
+                    ;
+
+                    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+                    node.selectAll('rect')
+                        .attr("height", function(d) { return d.dy; })
+                        .attr("width", _layout.nodeWidth())
+                    ;
+
+                    node.selectAll("text")
+                        .attr("y", function(d) { return d.dy / 2; })
+                    ;
                 },
                 show : function() {
                     g && g.style("display", null);
