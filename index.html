@@ -12,8 +12,8 @@
 <!--<script src="http://use.edgefonts.net/lato.js"></script>-->
 <!--<script charset="utf-8" src="http://d3js.org/d3.v3.min.js"></script>-->
 <script charset="utf-8" src="http://d3js.org/d3.v3.js"></script>
-<!--<script charset="utf-8" src="https://raw.github.com/artzub/d3-plugins/master/sankey/sankey.js"></script>-->
-<script charset="utf-8" src="http://artzub.com/sankey.js"></script>
+<script charset="utf-8" src="https://rawgithub.com/artzub/d3-plugins/master/sankey/sankey.js"></script>
+<!--<script charset="utf-8" src="sankey.js"></script>-->
 
 <style>
 
@@ -108,24 +108,6 @@
         box-shadow: 0 0 8px rgba(0, 0, 0, .5);
     }
 
-    .legend text {
-        text-shadow: 0 1px 2px rgba(255, 255, 255, .8);
-    }
-
-    .legend rect {
-        fill: none;
-        fill-opacity: 0;
-    }
-
-    .legend:hover rect,
-    .legend.checked:hover rect {
-        fill-opacity: .2;
-    }
-
-    .legend.checked rect {
-        fill-opacity: .4;
-    }
-
     .group text {
         font: 11px sans-serif;
         pointer-events: none;
@@ -164,6 +146,77 @@
         stroke-opacity: .3;
     }
 
+    .filters {
+        position: relative;
+        width: 100%;
+    }
+
+    #filters ul {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+        list-style: none;
+        position: relative;
+        font-size: 12px;
+    }
+
+    ul li {
+        position: relative;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    #filters #vis_type {
+        position: absolute;
+        bottom: 0;
+    }
+
+    li * {
+        display: inline-block;
+        z-index: 2;
+    }
+
+    li .crcl {
+        border-radius: .5em;
+        padding: .5em;
+        background: #000;
+        margin: .15em 5px -.15em .05em;
+    }
+
+    .legend {
+        text-shadow: 0 1px 2px rgba(255, 255, 255, .8);
+    }
+
+    .legend .bg {
+        opacity: 0;
+        z-index: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+
+    .legend:hover .bg,
+    .legend.checked:hover .bg {
+        opacity: .2;
+    }
+
+    .legend:active .bg,
+    .legend.checked:active .bg {
+        opacity: .6;
+    }
+
+    .legend.checked .bg {
+        opacity: .4;
+    }
+
+    #filter_cond {
+        max-height: 200px;
+        overflow-y: auto !important;
+    }
+
 </style>
 
 
@@ -171,6 +224,13 @@
 <div id="sidebar">
     <h1>Distribution of<br/>Grant Awards in<br/>Fiscal Year 2013</h1>
     <a href="http://visualizing.org/sprint/launch/" id="oinw" title="fullscreen version" target="_blank">Open in a new window</a>
+    <div id="filters">
+        <div style="opacity: .2">Click on items in order to apply filters</div>
+        <ul id="filter_cond"></ul>
+        <ul id="param_type"><li><strong>Group by:</strong></li></ul>
+        <ul id="from_to_type"><li><strong>Based on:</h1></strong></ul>
+        <ul id="vis_type"></ul>
+    </div>
 </div>
 
 
@@ -191,11 +251,23 @@ var ISO = {
 };
 
 var mode = {
-    Particles : 0,
-    Packages : 1,
-    Chords : 2,
-    Sankeys : 3
-};
+        Particles : 0,
+        Packages : 1,
+        Chords : 2,
+        Sankeys : 3
+    },
+    modeParam = {
+        "Sector" : "Major Sector",
+        "Procurement Category" : "Procurement Category",
+        "Procurement Method" : "Procurement Method",
+        "Procurement Type" : "Procurement Type",
+        "Product line" : "Product line"
+    },
+    modeBase = {
+        Borrower : "borrower",
+        Supplier : "supplier"
+    }
+    ;
 
 d3.select("#oinw").attr("href", document.location);
 
@@ -203,10 +275,6 @@ var vis = initVis();
 
 // Number Formatting
 var th = d3.format(",");
-
-//  Default Color Range
-var color = d3.scale.category20(),
-    colorC = d3.scale.category20b();
 
 var sidebar = d3.select("#sidebar")
         , sb_w =  sidebar.node().clientWidth || 215
@@ -220,8 +288,9 @@ var sidebar = d3.select("#sidebar")
         ;
 chart.style("width", widthFull + "px");
 
-var root, currentMode, zfn, dfn
+var root, zfn, dfn
     , countryPoints, countryNames, country
+    , currentModeParam, currentModeBase, currentMode
     ;
 
 // The pack layout, for computing the radius of groups.
@@ -284,12 +353,13 @@ function toRgba(c, a, fn) {
 
 function fill(d) {
     return d.type == -1
-            ? "none"
-            : toRgba(d.type
-            ? d.type == 2
-            ? color(d.key)
-            : "rgba(236, 246, 255)"
-            : color(d.sector), .5);
+        ? "none"
+        : toRgba(d.type
+            ? (d.type == 2
+                ? vis.color(d.key)
+                : "rgba(236, 246, 255)")
+            : vis.color(d[currentModeParam]), .5
+        );
 }
 
 function stroke(d) {
@@ -323,7 +393,7 @@ function value(d) {
 }
 
 function key(d) {
-    return (d.borrower && d.borrower.shortName) || "";
+    return (d[currentModeBase] && d[currentModeBase].shortName) || "";
 }
 
 function yPos(d) {
@@ -351,14 +421,15 @@ function zoomed(tr) {
 
     svg.attr("transform", "translate(" + (currentMode ? [0, 0] : dfn.t) + ")");
 
-    svg.selectAll(".x.axis")
+    if (currentMode == mode.Particles)
+        svg.selectAll(".x.axis")
             .call(xAxis.ticks(12, xAxisFormat));
 
     svg.selectAll(".y.axis, .x.axis")
             .style("display", currentMode ? "none" : null);
 
     countryNames.attr("transform", pos)
-            .style("visibility", visName)
+        .style("visibility", visName)
     ;
 
     (!tr
@@ -422,9 +493,67 @@ var svg = chart.append("svg")
                 .style("opacity", 0)
         ;
 
+function initRootValues(data) {
+    vis.chord.hide().clear();
+    vis.sankey.hide().clear();
+    return d3.nest()
+        .key(function(d) {
+            return d[currentModeBase].shortName;
+        })
+        .key(function(d) {
+            vis.color(d[currentModeParam]);
+            return d[currentModeParam];
+        })
+        .entries(data.sort(function(a, b) {
+            if (!a.supplier)
+                a = vis.dataItem(a);
+
+            if (!b.supplier)
+                b = vis.dataItem(b);
+
+            return d3.ascending(a[currentModeBase].shortName, b[currentModeBase].shortName);
+        }))
+        .filter(function(d){
+            d.type = 1;
+
+            var t = /*d.values.reduce(function(a, b) {
+             b.type = 2;
+             return a + b.values.length;
+             }, 0) > 15*/true;
+
+            t && d.values.forEach(function(b) {
+                b.type = 2;
+                vis.chord.initMatrix(b.values);
+                vis.sankey.initLinks(b.values);
+            });
+            return t;
+        })
+    ;
+}
+
+function applyMode() {
+    zoomed(arguments.length ? arguments[0] : undefined);
+
+    if (currentMode == mode.Chords) {
+        vis.sankey.hide();
+        vis.chord.show().draw(svg, chord, width + margin.left, height);
+    }
+    else if (currentMode == mode.Sankeys) {
+        vis.chord.hide();
+        vis.sankey.show().draw(svg, null, width + margin.left, height);
+    }
+    else {
+        vis.sankey.hide();
+        vis.chord.hide();
+    }
+}
+
 // Load the data from 2013
-d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
-//d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
+//d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, data) {
+d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
+
+    currentModeParam = modeParam.Sector;
+    currentModeBase = modeBase.Borrower;
 
     function getAll(a, b) {
         return a.concat(b.values);
@@ -438,41 +567,8 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
     root = {
         key:"",
         type : -1,
-        values: d3.nest()
-            .key(function(d) {
-                return d.borrower.shortName;
-            })
-            .key(function(d) {
-                color(d.sector);
-                return d.sector;
-            })
-            .entries(data.sort(function(a, b) {
-                if (!a.supplier)
-                    a = vis.dataItem(a);
-
-                if (!b.supplier)
-                    b = vis.dataItem(b);
-
-                return d3.ascending(a.borrower.shortName, b.borrower.shortName);
-            }))
-        // Filter Countries that has less than 15 contracts
-            .filter(function(d){
-                d.type = 1;
-
-                var t = d.values.reduce(function(a, b) {
-                    b.type = 2;
-                    return a + b.values.length;
-                }, 0) > 15;
-
-                t && d.values.forEach(function(b) {
-                    b.type = 2;
-                    vis.chord.initMatrix(b.values);
-                    vis.sankey.initLinks(b.values);
-                });
-                return t;
-            })
+        values: initRootValues(data)
     };
-
 
     pack.sort(sort).value(value);
 
@@ -495,7 +591,7 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
     function fade(opt) {
         return function(d) {
             countryPoints.filter(function(k) {
-                return k.type || k.borrower.shortName != d;
+                return k.type || k[currentModeBase].shortName != d;
             })
             .transition()
             .style("opacity", opt);
@@ -507,7 +603,7 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
             if (currentMode == mode.Packages)
                 return;
             countryPoints.filter(function(k) {
-                return k.borrower != d.borrower;
+                return k[currentModeBase] != d[currentModeBase];
             })
             .transition()
             .style("opacity", opt);
@@ -546,34 +642,57 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
         .spaceHeight(height)
     ;
 
+    function pointKey(d) {
+        return d.hasOwnProperty('key') ? (d.type == 2 ? d.type + d.key + d.parent.key : d.type + d.key)
+            : d.id + d.contract.date + d.date;
+    }
+
     country = svg.append("g");
 
-    countryPoints = country.selectAll(".dot")
-            .data(pack.nodes(root))
+    function initCountiesPoints(root) {
+        countryPoints = country.selectAll(".dot")
+            .data(pack.nodes(root), pointKey);
+
+        countryPoints.exit().remove();
+
+        countryPoints
             .enter()
             .append("g")
             .attr("class", "dot")
             .on("mouseover", fadeDot(.1))
             .on("mouseout", fadeDot(1))
-        // Call tooltip helper to show information about the Contract
+            // Call tooltip helper to show information about the Contract
             .call(vis.tooltip)
-    ;
-    countryPoints.append("path");
+            .append("path")
+        ;
 
-    countryNames = country.append("g")
+        countryPoints.each(function(k) {
+            d3.select(this).selectAll("*")
+                    .datum(k);
+        });
+
+        countryPoints.selectAll("path")
+            /*.datum(function(d) {return d;})*/
+            .style("fill", fill);
+
+        countryNames = country
             .selectAll(".dotName")
-            .data(countryPoints.data().filter(function(d) { return d.type == 1 }))
+            .data(countryPoints.data().filter(function(d) { return d.type == 1 }), pointKey);
+
+        countryNames.exit().remove();
+
+        countryNames
             .enter()
             .append("g")
             .attr("class", "dotName")
-            .call(vis.tooltip);
-
-    countryNames
+            .call(vis.tooltip)
             .append("text")
             .attr("dy", ".35em")
             .style("text-anchor", "middle")
             .text(function(d) { return d.key.split(',')[0] })
-    ;
+        ;
+    }
+    initCountiesPoints(root);
 
     zoomed();
 
@@ -581,18 +700,82 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
      * Add Legend
      */
     var hs = height - sidebar.select("h1").node().clientHeight,
-            info = sidebar
-                    .append("svg")
-                    .attr("width", 205)
-                    .attr("height", hs)
-                    .append("g")
-                    .attr("transform", "translate(5,5)")
-            ;
+        info = sidebar.select("#filters")
+            .attr("height", hs)
+        ;
 
-    info.append("text")
-            .attr("dy", ".35em")
-            .style("opacity", .2)
-            .text("Click on items in order to apply filter");
+    var filtersData = [{
+        values : vis.color.domain().sort(),
+        sclass : ".legend",
+        idbox : "#filter_cond",
+        c : vis.color,
+        tr : function(d, i) { return "translate(0," + (i + 1) * 18 + ")"; },
+        click : function(d) {
+            var g = d3.select(this);
+            if (g.classed("checked")) {
+                g.classed("checked", false);
+                vis.filterMap.remove(d);
+            }
+            else {
+                g.classed("checked", true);
+                vis.filterMap.set(d, true);
+            }
+            filterL(d);
+        }
+    }, {
+        values : d3.keys(mode).reverse(),
+        sclass : ".legend.itemType",
+        idbox : "#vis_type",
+        classes : function(d, i) { return "legend itemType" + (d == "Sankeys" ? " checked" : "");  },
+        c : "#888",
+        click : modeClick
+    }, {
+        values : d3.keys(modeParam),
+        sclass : ".legend.fparam",
+        idbox : "#param_type",
+        classes : function(d, i) { return "legend fparam" + (d == "Sector" ? " checked" : "");  },
+        c : "#B1F498",
+        click : paramTypeClick
+    }, {
+        values : d3.keys(modeBase),
+        sclass : ".legend.fftitem",
+        idbox : "#from_to_type",
+        classes : function(d, i) { return "legend fftitem" + (d == "Borrower" ? " checked" : "");  },
+        c : "#C4E0F7",
+        click : baseTypeClick
+    }];
+
+    function initFilters(item) {
+        var legend = info.select(item.idbox).selectAll(item.sclass)
+            .data(item.values, function(d) { return d; });
+
+        legend.exit().remove();
+
+        legend
+            .enter()
+            .append("li")
+            .attr("class", item.classes || "legend")
+            .on("click", item.click)
+            .call(function(li) {
+                li.attr("title", function(d) { return d; });
+
+                li.append("span")
+                    .attr("class", "bg")
+                    .style("background", item.c)
+                ;
+
+
+                li.append("span")
+                    .attr("class", "crcl")
+                    .style("background", item.c)
+                ;
+
+                li.append("span")
+                    .text(function(d) { return d; })
+                ;
+            })
+        ;
+    }
 
     function modeClick(d) {
         var g = d3.select(this);
@@ -616,70 +799,55 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
         filterL(!tr);
     }
 
-    [{
-        values : color.domain(),
-        sclass : ".legend",
-        c : color,
-        tr : function(d, i) { return "translate(0," + (i + 1) * 18 + ")"; },
-        click : function(d) {
-            var g = d3.select(this);
-            if (g.classed("checked")) {
-                g.classed("checked", false);
-                vis.filterMap.remove(d);
-            }
-            else {
-                g.classed("checked", true);
-                vis.filterMap.set(d, true);
-            }
-            filterL(d);
+    function paramTypeClick(d) {
+        var g = d3.select(this);
+        var tr = g.classed("checked");
+        d3.select(this.parentNode)
+                .selectAll(".fparam")
+                .classed("checked", false);
+        g.classed("checked", true);
+
+        currentModeParam = modeParam[d];
+        if (!tr) {
+            vis.initColor();
+            vis.filterMap.clear();
+            root.values = initRootValues(data);
+            filtersData[0].values = vis.color.domain().sort();
+            filtersData[0].c = vis.color;
+            initFilters(filtersData[0]);
+            initCountiesPoints(root);
+            applyMode(true);
         }
-    }, {
-        values : d3.keys(mode),
-        sclass : ".legend.itemType",
-        classes : function(d, i) { return "legend itemType" + (d == "Sankeys" ? " checked" : "");  },
-        c : "#888",
-        tr : function(d, i) { return "translate(0," + (hs - (i + 1) * 18) + ")"; },
-        click : modeClick
-    }].forEach(function(item) {
-                var legend = info.selectAll(item.sclass)
-                                .data(item.values)
-                                .enter()
-                                .append("g")
-                                .attr("class", item.classes || "legend")
-                                .attr("transform", item.tr)
-                                .on("click", item.click)
-                        ;
+    }
 
-                legend.append("rect")
-                        .style("fill", item.c)
-                        .attr("height", 18)
-                        .attr("y", -9)
-                        .attr("x", -7);
+    function baseTypeClick(d) {
+        var g = d3.select(this);
+        var tr = g.classed("checked");
+        d3.select(this.parentNode)
+                .selectAll(".fftitem")
+                .classed("checked", false);
+        g.classed("checked", true);
 
+        currentModeBase = modeBase[d];
+        if (!tr) {
+            root.values = initRootValues(data);
+            y.domain(root.values.map(function(d) { return d.key; }));
+            svg.selectAll(".y.axis")
+                .call(yAxis)
+                .selectAll("text")
+                .on("mouseover", fade(.1))
+                .on("mouseout", fade(1))
+                .attr("dy", '-.6em')
+                .style("cursor", "pointer")
+                .style("text-anchor", "end")
+                .style("font-size", "8px")
+            ;
+            initCountiesPoints(root);
+            applyMode(true);
+        }
+    }
 
-                legend.append("circle")
-                        .attr("cx", 0)
-                        .attr("cy", 0)
-                        .attr("r", 5)
-                        .style("fill", item.c)
-                ;
-
-                legend.append("text")
-                        .attr("x", 12)
-                        .attr("y", 0)
-                        .attr("dy", ".35em")
-                        .style("text-anchor", "start")
-                        .text(function(d) { return d; })
-                ;
-
-                legend.shift().forEach(function(g) {
-                    g = d3.select(g);
-                    g.select("rect")
-                            .attr("width",
-                                    displayLength(g.select("text").node()) + 20)
-                    ;
-                });
-            });
+    filtersData.forEach(initFilters);
 
     /**
      * Filter Functions on Hover
@@ -695,7 +863,7 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
     }
 
     function legFilter(d) {
-        return d.type == 1 || (d.type == 2 && vis.filterMap.has(d.key)) || vis.filterMap.has(d.sector);
+        return d.type == 1 || (d.type == 2 && vis.filterMap.has(d.key)) || vis.filterMap.has(d[currentModeParam]);
     }
 
     function filterValue(d) {
@@ -724,20 +892,8 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 
         country.style("display", currentMode == mode.Chords || currentMode == mode.Sankeys ? "none" : null);
 
-        zoomed(selected);
 
-        if (currentMode == mode.Chords) {
-            vis.sankey.hide();
-            vis.chord.show().draw(svg, chord, width + margin.left, height);
-        }
-        else if (currentMode == mode.Sankeys) {
-            vis.chord.hide();
-            vis.sankey.show().draw(svg, null, width + margin.left, height);
-        }
-        else {
-            vis.sankey.hide();
-            vis.chord.hide();
-        }
+        applyMode(selected);
     }
 
     function filterOff(selected) {
@@ -755,7 +911,6 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 });
 
 var rsTimer;
-
 function resize() {
     sb_w = sidebar.node().clientWidth || 215;
     chart.style("width", null);
@@ -770,10 +925,8 @@ function resize() {
 
     sidebar.style("display", null);
     var hs = height - sidebar.select("h1").node().clientHeight;
-    sidebar.select("svg")
-            .attr("height", hs)
-            .selectAll(".legend.itemType")
-            .attr("transform", function(d, i) { return "translate(0," + (hs - (i + 1) * 18) + ")"; })
+    sidebar.select("#filters")
+        .attr("height", hs)
     ;
 
     chart.select("svg").attr("width", widthFull)
@@ -803,11 +956,7 @@ function resize() {
         .spaceHeight(height)
     ;
 
-    zoomed();
-    if (currentMode == mode.Chords)
-        vis.chord.show().draw(svg, chord, width + margin.left, height);
-    else if (currentMode == mode.Sankeys)
-        vis.sankey.show().draw(svg, null, width + margin.left, height);
+    applyMode();
 }
 
 // Resize behavior
@@ -910,29 +1059,29 @@ function initVis() {
 
         tooltip.attr = function(name, value) {
             attrs.push(arguments);
-            return this;
+            return tooltip;
         };
 
         tooltip.text = function(value) {
             text = value;
-            return this;
+            return tooltip;
         };
 
         tooltip.style = function(name, value) {
             styles.push(arguments);
-            return this;
+            return tooltip;
         };
 
         tooltip.spaceWidth = function(value) {
             if (!value) return _w;
             _w = +value;
-            return this;
+            return tooltip;
         };
 
         tooltip.spaceHeight = function(value) {
             if (!value) return _h;
             _h = +value;
-            return this;
+            return tooltip;
         };
 
         return tooltip;
@@ -974,6 +1123,8 @@ function initVis() {
         , countries = {}
         , countriesByIndex = {}
         , countriesCounter = 0
+        , color
+        , that
         ;
 
     var filterMap = d3.helper.mapExt({});
@@ -1045,28 +1196,32 @@ function initVis() {
     }
 
     function check(d) {
-        return filterMap.length < 1 || filterMap.has(d.sector);
+        return filterMap.length < 1 || filterMap.has(d[currentModeParam]);
     }
 
     function value() {
         return check(this) ? this.basevalue : 0;
     }
 
-    return {
+    return that = {
+        color : (color = d3.scale.category20()),
+        initColor : function() {
+            that.color = color = d3.scale.category20();
+        },
         filterMap : filterMap,
         tooltip : d3.helper.tooltip()
-            .attr("class", function(d, i) { return d.sector; })
+            .attr("class", function(d, i) { return d[currentModeParam]; })
             .attr("d", "b")
             .text(function(d, i){
                 return [
-                    d.type != -1 ? "Borrower: <b>" : "",
-                    d.type == 1 ? d.key : d.type == 2 ? d.values[0].borrower.name : !d.type ? d.borrower.name : "",
-                    !d.type ? "</b><br>Supplier: <b>" + d.supplier.name : "",
-                    d.type == 2 || !d.type ? "</b><br>Sector: <b>" : "",
-                    d.type == 2 ? d.key : !d.type ? d.sector : "",
+                    d.type != -1 ? currentModeBase == modeBase.Borrower ? "Borrower: <b>" : "Supplier: <b>" : "",
+                    d.type == 1 ? d.key : d.type == 2 ? d.values[0][currentModeBase].name : !d.type ? d[currentModeBase].name : "",
+                    !d.type ? "</b><br>" + (currentModeBase == modeBase.Borrower ? "Supplier: <b>" + d.supplier.name : "Borrower: <b>" + d.borrower.name) : "",
+                    d.type == 2 || !d.type ? "</b><br>" + currentModeParam + ": <b>" : "",
+                    d.type == 2 ? d.key : !d.type ? d[currentModeParam] : "",
                     !d.type ? "</b><br/>Project: <b>(" + d.project.id + ") " + d.project.name : "",
                     "</b><br/><br/>",
-                    !d.type ? "Supplied" : "Borrowed",
+                    currentModeBase == modeBase.Borrower ? (!d.type ? "Supplied" : "Borrowed") : (d.type ? "Supplied" : "Borrowed"),
                     " ($): <b>",
                     th(d.value),
                     "M.</b><br>"
@@ -1085,10 +1240,14 @@ function initVis() {
             d.contract = initContract(d);
             d.year = d['Fiscal Year'];
             d.project = initProject(d);
+            d.id = d['WB Contract Number'];
+            d.date = Date.parse(d['As of Date']);
 
             return d;
         },
         chord : (function() {
+            var that;
+
             var g, g1, g2, chords, groups, arc, chord, tcalc;
 
             var rad = 180 / Math.PI;
@@ -1102,7 +1261,7 @@ function initVis() {
                 ;
 
             var tooltip = d3.helper.tooltip()
-                .attr("class", function(d, i) { return d.sector; })
+                .attr("class", function(d, i) { return d[currentModeParam]; })
                 .attr("d", "b")
                 .text(function(d, i){
                     var result = [];
@@ -1111,7 +1270,7 @@ function initVis() {
                         result = [
                             "Country: <b>",
                             countriesCorByIndex[d.index].shortName,
-                            "</b><br/><br/>Supplied ($): <b>",
+                            "</b><br/><br/>" + (currentModeBase == modeBase.Borrower ? "Supplied" : "Borrowed") + " ($): <b>",
                             th(Math.floor(d.value)) + "M.</b><br/>"
                         ];
                     }
@@ -1122,11 +1281,11 @@ function initVis() {
                             d.supplier.shortName,
                             "</b><br/>Borrower: <b>",
                             d.borrower.shortName,
-                            "</b><br/>Sector: <b>",
-                            d.sector,
+                            "</b><br/>" + currentModeParam + ": <b>",
+                            d[currentModeParam],
                             "</b><br/>Number of projects: <b>",
                             d.values.length,
-                            "</b><br/><br/>Supplied ($): <b>",
+                            "</b><br/><br/>" + (currentModeBase == modeBase.Borrower ? "Supplied" : "Borrowed") + " ($): <b>",
                             th(+d),
                             "</b><br/>"
 
@@ -1158,7 +1317,7 @@ function initVis() {
                 var v = 0, n = this.values.length;
                 if (filterMap.length > 0) {
                     while(--n > -1)
-                        v += filterMap.has(this.values[n].sector) ? this.values[n] : 0;
+                        v += filterMap.has(this.values[n][currentModeParam]) ? this.values[n] : 0;
                 }
                 else {
                     v = this.basevalue;
@@ -1167,7 +1326,7 @@ function initVis() {
             }
 
             function key(d) {
-                return d.sector + "s" + d.supplier.key + "b" + d.borrower.key;
+                return d[currentModeParam] + "s" + d.supplier.key + "b" + d.borrower.key;
             }
 
             function keyChord(d) {
@@ -1176,10 +1335,8 @@ function initVis() {
 
             function initCell(d, k) {
                 k = "s" + d.supplier.key + "b" + d.borrower.key;
-                //var s = cells[d.sector] || (cells[d.sector] = {});
                 return cells[k] || (cells[k] = {
                     key : k,
-                    sector : d.supplier.key == d.borrower.key ? "himself" : "someone",
                     supplier : d.supplier,
                     borrower : d.borrower,
                     basevalue : 0,
@@ -1190,18 +1347,18 @@ function initVis() {
             }
 
             function appendValue(c, d) {
-                var k = c.hash[d.sector],
+                var k = c.hash[d[currentModeParam]],
                     cell = c.values[k];
                 if (!cell) {
                     cell = {
-                        sector : d.sector,
                         supplier : d.supplier,
                         borrower : d.borrower,
                         basevalue : 0,
                         valueOf : value,
                         values : []
                     };
-                    c.hash[d.sector] = c.values.push(cell) - 1;
+                    cell[currentModeParam] = d[currentModeParam];
+                    c.hash[d[currentModeParam]] = c.values.push(cell) - 1;
                 }
                 cell.basevalue += d.basevalue;
                 cell.values.push(d);
@@ -1209,29 +1366,21 @@ function initVis() {
             }
 
             function appendMatrix(d) {
-                var c = initCor(d.supplier);
+                var c = initCor(currentModeBase == modeBase.Borrower ? d.supplier : d.borrower);
                 var row = matrix[c.id];
                 if (!row)
                     row = matrix[c.id] = [];
-                c = row[initCor(d.borrower).id] = initCell(d);
+                c = row[initCor(currentModeBase == modeBase.Borrower ? d.borrower : d.supplier).id] = initCell(d);
                 c.basevalue += d.basevalue;
                 appendValue(c, d);
             }
 
             function fill(d) {
-                return color(d.source.value.sector);
+                return color(d.source.value[currentModeParam]);
             }
 
             function stroke(d) {
                 return d3.rgb(fill(d)).darker();
-            }
-
-            function chordTitle(d) {
-                return d.source.value.supplier.shortName +
-                    " to " +
-                    d.source.value.borrower.shortName +
-                    " $" +
-                    th(Math.floor(d.source.value)) + "M.";
             }
 
             function sortChord(a, b) {
@@ -1329,10 +1478,10 @@ function initVis() {
 
             function fadeChord(opt) {
                 return function(g) {
-                    var sector = g.source.value.sector;
+                    var sector = g.source.value[currentModeParam];
 
                     chords.selectAll("path")
-                            .filter(function(d) { return d.source.value.sector != sector; })
+                            .filter(function(d) { return d.source.value[currentModeParam] != sector; })
                             .transition()
                             .style("opacity", opt);
                 };
@@ -1374,10 +1523,21 @@ function initVis() {
                     .style("visibility", groupStyle);
             }
 
-            return {
+            return that = {
+                clear : function(data) {
+                    g && g.remove();
+                    g = g1 = g2 = chords = groups = tcalc = null;
+
+                    for(var i in matrix)
+                        if (matrix.hasOwnProperty(i))
+                            matrix[i].splice(0, matrix.length);
+                    matrix.splice(0, matrix.length);
+                    cells = {};
+                    return that;
+                },
                 initMatrix : function(data) {
                     data.forEach(appendMatrix);
-                    return this;
+                    return that;
                 },
                 draw : function(svg, layout, w, h) {
                     if (!g) {
@@ -1402,12 +1562,12 @@ function initVis() {
 
                     // The arc generator, for the groups.
                     (arc || (arc = d3.svg.arc()))
-                        .innerRadius(r0)
-                        .outerRadius(r1);
+                            .innerRadius(r0)
+                            .outerRadius(r1);
 
                     // The chord generator (quadratic Bézier), for the chords.
                     (chord || (chord = d3.svg.chord()))
-                        .radius(r0);
+                            .radius(r0);
 
                     // Compute the chord layout.
                     layout.matrix(matrix);
@@ -1415,26 +1575,26 @@ function initVis() {
                     layout.sortGroups(undefined);
 
                     (g || (g = svg.append("g")))
-                        .attr("transform", "translate(" + [w/2, h/2 + margin.top] + ")");
+                            .attr("transform", "translate(" + [w/2, h/2 + margin.top] + ")");
 
                     g1 = g1 || g.append('g');
                     g2 = g2 || g.append('g');
 
                     tcalc = tcalc || g.append("text")
-                        .style("opacity", 0)
-                        .style("visibility", "hidden");
+                            .style("opacity", 0)
+                            .style("visibility", "hidden");
 
                     //g.selectAll("g.chord").remove();
 
                     // Add chords.
                     chords = g1.selectAll("g.chord")
-                        .data(layout.chords().filter(filterChord), keyChord);
+                            .data(layout.chords().filter(filterChord), keyChord);
 
                     chords.exit().remove();
 
                     chords.enter()
-                        .append("g")
-                        .call(addChord)
+                            .append("g")
+                            .call(addChord)
                     ;
 
                     chords.call(updChord);
@@ -1443,38 +1603,40 @@ function initVis() {
 
                     // Add groups.
                     groups = g2.selectAll("g.group")
-                        .data(layout.groups(), function(d) {
-                            return countriesCorByIndex[d.index].key;
-                        });
+                            .data(layout.groups(), function(d) {
+                                return countriesCorByIndex[d.index].key;
+                            });
 
                     groups.exit().remove();
 
                     groups.enter()
-                        .append("g")
-                        .call(addGroup)
-                        .call(tooltip)
+                            .append("g")
+                            .call(addGroup)
+                            .call(tooltip)
                     ;
 
                     groups.each(function(k) {
                         d3.select(this).selectAll("*")
-                            .datum(k);
+                                .datum(k);
                     });
 
                     groups.call(updGroup);
 
-                    return this;
+                    return that;
                 },
                 show : function() {
                     g && g.style("display", null);
-                    return this;
+                    return that;
                 },
                 hide : function() {
                     g && g.style("display", "none");
-                    return this;
+                    return that;
                 }
-            }
+            };
         })(),
         sankey : (function(){
+            var that;
+
             var typeLink = {
                     ss: 0, // supplier - sector
                     sb: 1, // borrower - sector
@@ -1527,8 +1689,8 @@ function initVis() {
                             d.linkValue.supplier.shortName,
                             "</b><br/>Borrower: <b>",
                             d.linkValue.borrower.shortName,
-                            "</b><br/>Sector: <b>",
-                            d.linkValue.sector,
+                            "</b><br/>" + currentModeParam + ": <b>",
+                            d.linkValue[currentModeParam],
                             "</b><br/>Project: <b>",
                             "(" + d.linkValue.project.id + ") ",
                             d.linkValue.project.name,
@@ -1554,18 +1716,18 @@ function initVis() {
             }
 
             function appendLinks(d) {
-                var f = /*d.supplier == d.borrower ? (function(d){ return function(k) { return d/2; } })(d) : */value.bind(d);
+                var f = value.bind(d);
 
                 links.push({
                     source : appendNode(d.supplier, typeNode.c + d.supplier.key, typeNode.c),
-                    target : appendNode(d.sector, typeNode.s + d.sector, typeNode.s),
+                    target : appendNode(d[currentModeParam], typeNode.s + d[currentModeParam], typeNode.s),
                     type : typeLink.ss,
                     value : f,
                     linkValue : d
                 });
 
                 links.push({
-                    source : appendNode(d.sector, typeNode.s + d.sector, typeNode.s),
+                    source : appendNode(d[currentModeParam], typeNode.s + d[currentModeParam], typeNode.s),
                     target : appendNode(d.borrower, typeNode.cb + d.borrower.key, typeNode.cb),
                     type : typeLink.sb,
                     value : f,
@@ -1595,30 +1757,52 @@ function initVis() {
                         : type == typeNode.c
                         ? l.linkValue.supplier.key != n.nodeValue.key
                         : type == typeNode.s
-                        ? l.linkValue.sector != n.nodeValue
+                        ? l.linkValue[currentModeParam] != n.nodeValue
                         : l.linkValue.project.id != n.nodeValue.id;
             }
 
             function fadeNode(opt) {
                 return function(n) {
+                    var nh = {};
+
                     link.filter(function(l) {
-                            return checkByType(l, n);
+                            var ch = checkByType(l, n);
+                            !ch
+                            && (nh[l.source.key] = true)
+                            && (nh[l.target.key] = true);
+                            return ch;
                         })
                         .transition()
-                        .style("opacity", opt);
+                        .style("opacity", opt)
+                    ;
+
+                    node.filter(function(l) {
+                            return !nh.hasOwnProperty(l.key);
+                        })
+                        .transition()
+                        .style("opacity", opt)
+                    ;
                 }
             }
 
             function fadeLink(opt) {
                 return function(l) {
+                    var nh = {};
+                    nh[l.source.key] = true;
+                    nh[l.target.key] = true;
+
                     link.filter(function(ls) {
-                        return ls.linkValue != l.linkValue;
+                        var ch = ls.linkValue != l.linkValue;
+                        !ch
+                        && (nh[ls.source.key] = true)
+                        && (nh[ls.target.key] = true);
+                        return ch;
                     })
                     .transition()
                     .style("opacity", opt);
 
                     node.filter(function(n) {
-                        return checkByType(l, n);
+                        return !nh.hasOwnProperty(n.key);
                     })
                     .transition()
                     .style("opacity", opt);
@@ -1628,17 +1812,24 @@ function initVis() {
             var g, g1, g2,
                 node, link, path;
 
-            return {
+            return that = {
+                clear : function() {
+                    g && g.remove();
+                    g = g1 = g2 = node = link = path = null;
+                    links.splice(0, links.length);
+                    nodes.clear();
+                    return that;
+                },
                 initLinks : function(values) {
                     values.forEach(appendLinks);
-                    return this;
+                    return that;
                 },
                 draw : function(svg, layout, w, h) {
 
                     var workNodes = d3.map({}),
                         workLinks = links.filter(function(d) {
                             var r =  d.value() > 0;
-                            r = r && (filterMap.length > 0 || d.type != typeLink.bp);
+                            r = r && ((filterMap.length > 0 && filterMap.length < 3) || d.type != typeLink.bp);
                             if (r) {
                                 if (!workNodes.has(d.source.key))
                                     workNodes.set(d.source.key, d.source);
@@ -1647,7 +1838,6 @@ function initVis() {
                             }
                             return r;
                         });
-
 
                     (_layout = layout || _layout || d3.sankey().nodeWidth(8).nodePadding(4))
                         .links(workLinks)
@@ -1673,13 +1863,13 @@ function initVis() {
                         .append("path")
                         .call(tooltip)
                         .attr("class", "link")
-                        .on("mouseover", fadeLink(.03))
+                        .on("mouseover", fadeLink(.2))
                         .on("mouseout", fadeLink(1))
                     ;
 
                     link.attr("d", path)
                         .style('stroke', function(d) {
-                            return color(d.linkValue.sector);
+                            return color(d.linkValue[currentModeParam]);
                         })
                         .style("stroke-width", function(d) { return Math.max(1, d.dy); })
                         .sort(function(a, b) { return b.dy - a.dy; })
@@ -1697,7 +1887,7 @@ function initVis() {
                         .append("g")
                         .attr("class", "node")
                         .call(tooltip)
-                        .on("mouseover", fadeNode(0.03))
+                        .on("mouseover", fadeNode(.2))
                         .on("mouseout", fadeNode(1))
                         .call(d3.behavior.drag()
                             .origin(function(d) { return d; })
@@ -1728,24 +1918,29 @@ function initVis() {
                         })
                     ;
 
-                    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+                    node.attr("transform", function(d) {
+                        var y = d.y + (d.dy < 0 ? d.dy : 0);
+                        return "translate(" + [d.x , y] + ")";
+                    });
 
                     node.selectAll('rect')
-                        .attr("height", function(d) { return d.dy; })
+                        .attr("height", function(d) { return Math.abs(d.dy); })
                         .attr("width", _layout.nodeWidth())
                     ;
 
                     node.selectAll("text")
-                        .attr("y", function(d) { return d.dy / 2; })
+                        .attr("y", function(d) { return Math.abs(d.dy) / 2; })
+                        .style("display", function(d) { return Math.abs(d.dy) < 16  ? "none" : null })
                     ;
+                    return that;
                 },
                 show : function() {
                     g && g.style("display", null);
-                    return this;
+                    return that;
                 },
                 hide : function() {
                     g && g.style("display", "none");
-                    return this;
+                    return that;
                 }
             }
         })()
