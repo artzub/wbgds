@@ -354,12 +354,11 @@ function toRgba(c, a, fn) {
 function fill(d) {
     return d.type == -1
         ? "none"
-        : toRgba(d.type
-            ? (d.type == 2
+        : d.type
+            ? d.type == 2
                 ? vis.color(d.key)
-                : "rgba(236, 246, 255)")
-            : vis.color(d[currentModeParam]), .5
-        );
+                : "rgb(236, 246, 255)"
+            : vis.color(d[currentModeParam]);
 }
 
 function stroke(d) {
@@ -439,6 +438,7 @@ function zoomed(tr) {
             .style("visibility", visibility)
             .selectAll("path")
             .style({
+                "fill-opacity": .5,
                 "fill" : fill,
                 "stroke" : stroke
             })
@@ -663,17 +663,16 @@ d3.csv("sprint_major-contract-awards-2013.csv", function(error, data) {
             .on("mouseout", fadeDot(1))
             // Call tooltip helper to show information about the Contract
             .call(vis.tooltip)
+            .attr("transform", pos)
             .append("path")
+            .style("fill-opacity", 0)
+            .style("fill", fill)
         ;
 
         countryPoints.each(function(k) {
             d3.select(this).selectAll("*")
                     .datum(k);
         });
-
-        countryPoints.selectAll("path")
-            /*.datum(function(d) {return d;})*/
-            .style("fill", fill);
 
         countryNames = country
             .selectAll(".dotName")
@@ -1743,13 +1742,6 @@ function initVis() {
                 });
             }
 
-            function dragMove(d) {
-                d3.select(this)
-                    .attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
-                _layout.relayout();
-                link.attr("d", path);
-            }
-
             function checkByType(l, n) {
                 var type = n.type;
                 return type == typeNode.cb
@@ -1882,6 +1874,17 @@ function initVis() {
                             return d.key;
                         })
                     ;
+
+                    function dragMove(d) {
+                        var y = Math.min(h + (d.dy < 0 ? d.dy : -d.dy), d3.event.y);
+                        d.y = Math.max(0, y);
+                        y = d.y + (d.dy < 0 ? d.dy : 0);
+
+                        d3.select(this)
+                            .attr("transform", "translate(" + [d.x , y] + ")");
+                        _layout.relayout();
+                        link.attr("d", path);
+                    }
 
                     node.enter()
                         .append("g")
