@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>World Bank Global Development Sprint</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+</head>
+    <!-- https://dl-web.dropbox.com/spa/6x4vg7uwuzglgh3/wbgds/public/index.html -->
+<body>
+
+<script src="http://use.edgefonts.net/lato.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<!--<script src="../../Underscore/underscore-min.js"></script>-->
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+<script>
+    //note: this is/replaces <script src="../../Underscore/underscore.nest.js">
+    (function(a,_){var b=a.nest={},c=function(a){return _.map(a,function(a,b){return{name:b,children:a}})};b.nest=function(a,b,d){_.isString(b)&&(b=[b]);var e=function(f,g,h){if(g===0){f.children=c(_.groupBy(a,b[0]));if(g<b.length)for(var i=0;i<f.children.length;i++)e(f.children[i],g+1,i)}else{f.index=h;if(g>=b.length)typeof d!="undefined"&&(f.value=d(f.children),delete f.children);else{f.children=c(_.groupBy(f.children,b[g]));for(var j=0;j<f.children.length;j++)e(f.children[j],g+1,j)}}return f};return e({},0)},typeof exports!="undefined"?(typeof module!="undefined"&&module.exports&&(module.exports=b),exports.nester=b):typeof define=="function"&&define.amd?define("underscore.nest",[],function(){return b}):a._.mixin(b)})(this,_)
+</script>
+
+<style>
+
+    body {
+        font-family: lato, serif;
+        font-size: 12px;
+        padding: 0;
+        margin: 0;
+    }
+
+    #chart {
+        margin-left: 40px;
+        margin-top: 20px;
+        width: 780px;
+        float: left;
+    }
+
+
+    circle {
+        fill: cornsilk;/*rgb(31, 119, 180);*/
+        fill-opacity: .25;
+        stroke: rgb(31, 119, 180);
+        stroke-width: 1px;
+    }
+
+    .leaf circle {
+        fill: #ff7f0e;
+        fill-opacity: 1;
+    }
+
+    #rEpOrtEr {
+        position: absolute;
+        background: cornsilk;
+        left: 10px;
+        top: 60px;
+        min-width: 200px;
+        width: auto;
+        min-height: 20px;
+        height: auto;
+        padding: 10px 20px 20px 10px;
+        text-align: center;
+        visibility: hidden;
+        z-index: 100;
+    }
+
+    #tOprEp {
+        clear: both
+    }
+
+    .reportdOOs {
+        background: lightgrey;
+        border: 1px solid black;
+        border-radius: 6px;
+        -moz-border-radius: 6px;
+        -webkit-border-radius: 6px;
+        box-shadow: inset -3px -3px 2px dimgrey;
+        -moz-box-shadow: inset -3px -3px 2px dimgrey;
+        -webkit-box-shadow: inset -3px -3px 2px dimgrey;
+        /* opacity: .6;*/
+    }
+
+    .reportLabels {
+        font-family: Tahoma, Arial Black, sans-serif;
+        color:  black; /*#2F8D21*/
+        /*  fill:  black;#2F8D21*/
+        font-size: 110%;
+        font-weight: normal;
+        text-shadow: .5px .5px 1px black;
+        /*  letter-spacing: -1px;
+          line-height: 85%;  */
+    }
+
+
+    .deDivs {
+        background: none;
+        border: none;
+        width: auto;
+        height: auto;
+        padding: 4px;
+        background: rgba(0, 0, 0, .2);
+        border: 1.5px solid dimgrey;
+        border-radius: 6px;
+        -moz-border-radius: 6px;
+        -webkit-border-radius: 6px;
+        box-shadow: 1px 1px .5px dimgrey;
+        -moz-box-shadow: 1px 1px .5px dimgrey;
+        -webkit-box-shadow:  1px 1px .5px dimgrey;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+
+    #parentSelector {
+        position: absolute;
+        top: 6px;
+        left: 60px;
+    }
+
+    #colorSelector {
+        position: absolute;
+        top: 6px;
+        left: 536px;
+    }
+</style>
+
+
+<div id="chart"></div>
+
+<div id="rEpOrtEr">
+    <div id="tOprEp"></div>
+    <div id="mIdrEp"></div>
+    <div id="bOtrEp"></div>
+</div>
+
+
+<div id="parentSelector">
+    pick the parent:<br>
+    <form action="" method="GET" id="groupPicker">
+        <input type="radio" name="groups" id="group01" value="Major Sector" onClick="pickAgroup(this.value)">major sector<br>
+        <input type="radio" name="groups" id="group02" value="Supplier Country" onClick="pickAgroup(this.value)" checked="checked">supplier<br>
+        <input type="radio" name="groups" id="group03" value="Procurement Type" onClick="pickAgroup(this.value)">procurement type<br>
+        <input type="radio" name="groups" id="group04" value="Procurement Category" onClick="pickAgroup(this.value)">procurement category<br>
+        <input type="radio" name="groups" id="group05" value="Procurement Method" onClick="pickAgroup(this.value)">procurement method<br>
+        <!--<input type="radio" name="groups" id="group06" value="Product Line" onClick="pickAgroup(this.value)">product line<br>-->
+        <input type="radio" name="groups" id="group06" value="Contract Description" onClick="pickAgroup(this.value)">contract description<br>
+    </form>
+</div>
+
+<div id="colorSelector">
+    pick the category to color by:<br>
+    <form action="" method="GET" id="groupPicker">
+        <input type="radio" name="colors" id="color01" value="Major Sector" onClick="pickAcolor(this.value)" checked="checked">major sector<br>
+        <input type="radio" name="colors" id="color02" value="Supplier Country" onClick="pickAcolor(this.value)">supplier<br>
+        <input type="radio" name="colors" id="color03" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
+        <input type="radio" name="colors" id="color04" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
+        <input type="radio" name="colors" id="color05" value="Procurement Method" onClick="pickAcolor(this.value)">procurement method<br>
+        <!--<input type="radio" name="colors" id="color06" value="Product Line" onClick="pickAcolor(this.value)">product line<br>-->
+        <input type="radio" name="colors" id="color06" value="Contract Description" onClick="pickAcolor(this.value)">contract description<br>
+    </form>
+</div>
+<script>
+
+var dataAllround;
+
+var currentParent,
+        currentColor;
+
+var diameter = 720;
+
+var pack = d3.layout.pack()
+        .sort(null)
+        .size([diameter - 4, diameter - 4])
+        .value(function(d) { return d.value; })
+
+var fill = d3.scale.category20();
+
+var zoom = d3.behavior.zoom()
+        .scaleExtent([1, 3])
+        .on("zoom",function() { svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
+        });
+
+var svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", diameter)
+        .attr("height", diameter)
+        .append("g")
+    //      .attr("transform", "translate(2,2)")
+        .call(zoom);
+
+var verSlag = d3.select("#rEpOrtEr")
+        .attr("class", "reportdOOs")
+        .on("click", pooF)
+
+d3.selectAll("#parentSelector, #colorSelector")
+        .attr("class", "deDivs");
+
+//d3.json("contractawards.json", function(error, BIGunes) {
+//d3.json("https://finances.worldbank.org/api/views/kdui-wcs3/rows.json", function(error, BIGunes) {
+d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
+//d3.csv("sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
+
+    dataAllround = BIGunes;
+
+    BIGunes.forEach(function(d) {
+        d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
+    });
+
+
+    currentParent = "Supplier Country";
+    currentColor = "Major Sector";
+
+    var doLLop = new Object;
+
+//doLLop = _.nest(nEEms, ["year", "region", "borrower", currentParent]);
+    doLLop = _.nest(BIGunes, ["Region", "Borrower Country", currentParent]);
+
+    doLLop.name = "2013";
+
+    console.log(doLLop);
+
+    var node = svg.datum(doLLop).selectAll(".node")
+            .data(pack.nodes)
+
+            .enter().append("g")
+            .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+    node.append("circle")
+            .attr("r", function(d) { return d.r; })
+            .style("fill", function(d) { return fill(d[currentColor] ); })
+            .on("mouseover", pleaseReport)
+            .on("mousemove", toolMover)
+            .on("mouseout", pooF)
+
+
+    node.filter(function(d) { return d.depth <= 1; })
+            .append("text")
+            .attr("y", function(d) { return -d.r; })//".3em")
+            .style("text-anchor", "middle")
+            .text(function(d) { return d.name != "OTHER" ? d.name : ""; });//.substring(0, d.r / 3); });
+
+
+    /*   node.filter(function(d) { return !d.children; })
+     .append("text")
+     .attr("dy", ".3em")
+     .style("text-anchor", "middle")
+     //     .text(function(d) { return d.sector; });//.substring(0, d.r / 3); });
+     */
+    /*    node.append("title")
+     .text(function(d) { return d.children ? d.name : d.Ptype + ": $" + d.amount; });
+     */
+});
+
+d3.select(self.frameElement).style("height", diameter + "px");
+
+
+
+function pickAgroup(dingske) {
+
+    currentParent = dingske;
+
+    svg.selectAll(".node").remove();
+
+    var doLLop = new Object;
+
+    doLLop = _.nest(dataAllround, ["Region", "Borrower Country", dingske]);
+
+    doLLop.name = "root";
+
+    var node = svg.datum(doLLop).selectAll(".node")
+            .data(pack.nodes)
+
+            .enter().append("g")
+            .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+    node.append("circle")
+            .attr("r", function(d) { return d.r; })
+            .style("fill", function(d) { return fill(d[currentColor] ); })
+            .on("mouseover", pleaseReport)
+            .on("mousemove", toolMover)
+            .on("mouseout", pooF)
+
+    node.filter(function(d) { return d.depth <= 1; })
+            .append("text")
+            .attr("y", function(d) { return -d.r; })//".3em")
+            .style("text-anchor", "middle")
+            .text(function(d) { return d.name; });
+
+
+
+};
+
+
+function pickAcolor(dingske) {
+
+    currentColor = dingske;
+
+    d3.selectAll(".node").selectAll("circle")
+            .style("fill", function(d) { return fill(d[dingske] ); })
+};
+
+
+function pleaseReport(d) {
+
+    var mijnData = d;
+
+    // console.log(mijnData);
+
+    verSlag.style("visibility", "visible")
+    d3.selectAll(".topRPRTRS, .midRPRTRS, .onderRPRTRS").remove();
+
+
+    if (d.children) {
+        verSlag.select("#tOprEp")
+                .data([mijnData])
+                .append("div")
+                .attr("class", "topRPRTRS")
+                .html(function(d) { return "<span class=\"reportLabels\">" + d.name + "<br/><br></span>"; } )
+//          .html(function(d) { return d.depth == 1 ? "<span class=\"reportLabels\">" + d.name + "<br/><br></span>" : "<span class=\"reportLabels\">" + currentParent + ": " + d.name + "<br/><br></span>"; } )
+
+    }
+    else{
+        verSlag.select("#tOprEp")
+                .data([mijnData])
+                .append("div")
+                .attr("class", "topRPRTRS")
+                .html(function(d) { return "<span class=\"reportLabels\">naam: " + d["Borrower Country"] + "<br/>(region : " + d.Region + ")<br/><br></span>"; } )
+
+        verSlag.select("#mIdrEp")
+                .datum(mijnData)
+                .append("div")
+                .attr("class", "midRPRTRS")
+                .html(function(d) { console.log(d); return "<span class=\"reportLabels\">sector: " + d["Major Sector"] + "<br/>procurement:<br/>type: " + d["Procurement Type"] + "<br/>category: " + d["Procurement Category"] + "<br/>method: " + d["Procurement Method"] + "<br/>contract description: " + d["Contract Description"] + "<br/><br></span>"; } )
+//product line: " + d["Product Line"] + "<br/>
+        verSlag.select("#bOtrEp")
+                .datum(mijnData)
+                .append("div")
+                .attr("class", "onderRPRTRS")
+                .html(function(d) { return "<span class=\"reportLabels\">amount: $" + d.value + "<br/>supplier: " + d["Supplier Country"] + "<br/></span>"; } )
+    };
+
+
+    verSlag.style("visibility", "visible")
+
+};
+
+
+function toolMover() {
+    verSlag.style("top", (d3.event.pageY - 36) + "px")
+            .style("left", (d3.event.pageX + 36) + "px");
+
+};
+
+
+function pooF() {
+    d3.select("#rEpOrtEr").style("visibility", "hidden");
+};
+
+
+
+</script>
+
+</body>
+</html>
