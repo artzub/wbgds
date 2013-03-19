@@ -108,22 +108,23 @@
     }
 
 
-    #orderSelector {
-        position: absolute;
-        top: 206px;
-        left: 6px;
-    }
-
     #parentSelector {
         position: absolute;
         top: 6px;
-        left: 60px;
+        left: 16px;
     }
+
+    #orderSelector {
+        position: absolute;
+        top: 6px;
+        left: 666px;
+    }
+
 
     #colorSelector {
         position: absolute;
-        top: 6px;
-        left: 536px;
+        top: 570px;
+        left: 656px;
     }
 </style>
 
@@ -136,9 +137,8 @@
     <div id="bOtrEp"></div>
 </div>
 
-
 <div id="parentSelector">
-    pick the parent:<br>
+    <strong>order by geography plus one:</strong><br>
     <form action="" method="GET" id="groupPicker">
         <input type="radio" name="groups" id="group01" value="Major Sector" onClick="pickAgroup(this.value)">major sector<br>
         <input type="radio" name="groups" id="group02" value="Supplier Country" onClick="pickAgroup(this.value)" checked="checked">supplier<br>
@@ -150,30 +150,31 @@
     </form>
 </div>
 
+<div id="orderSelector">
+    <strong>variabel to order by:</strong><br>
+    <form action="" method="GET" id="orderPicker">
+        <input type="radio" name="order" id="order01" value="Major Sector" onClick="pickAnorder(this.value)">major sector<br>
+        <input type="radio" name="order" id="order02" value="Supplier Country" onClick="pickAnorder(this .value)">supplier country<br>
+        <input type="radio" name="order" id="order03" value="Procurement Type" onClick="pickAnorder(this.value)">procurement type<br>
+        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">Procurement Category<br>
+        <input type="radio" name="order" id="order05" value="Procurement Method" onClick="pickAnorder(this.value)">procurement method<br>
+        <input type="radio" name="order" id="order06" value="Contract Description" onClick="pickAnorder(this.value)">contract description<br>
+        <!--<input type="radio" name="years" id="order07" value="2013" onClick="pickAnorder(this.value)" checked="checked">2013<br>-->
+    </form>
+</div>
+
+
+
 <div id="colorSelector">
-    pick the category to color by:<br>
+    <strong>variabel to color by:</strong><br>
     <form action="" method="GET" id="groupPicker">
         <input type="radio" name="colors" id="color01" value="Major Sector" onClick="pickAcolor(this.value)">major sector<br>
-        <input type="radio" name="colors" id="color02" value="Supplier Country" onClick="pickAcolor(this.value)">supplier<br>
+        <input type="radio" name="colors" id="color02" value="Supplier Country" onClick="pickAcolor(this.value)">supplier country<br>
         <input type="radio" name="colors" id="color03" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
         <input type="radio" name="colors" id="color04" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
         <input type="radio" name="colors" id="color05" value="Procurement Method" onClick="pickAcolor(this.value)">procurement method<br>
         <!--<input type="radio" name="colors" id="color06" value="Product Line" onClick="pickAcolor(this.value)">product line<br>-->
         <input type="radio" name="colors" id="color06" value="Contract Description" onClick="pickAcolor(this.value)">contract description<br>
-    </form>
-</div>
-
-
-<div id="orderSelector">
-    pick a variael to order by:<br>
-    <form action="" method="GET" id="orderPicker">
-        <input type="radio" name="order" id="order01" value="Major Sector" onClick="pickAnorder(this.value)" checked="checked">Major Sector<br>
-        <input type="radio" name="order" id="order02" value="Supplier Country" onClick="pickAnorder(this .value)">Supplier Country<br>
-        <input type="radio" name="order" id="order03" value="Procurement Type" onClick="pickAnorder(this.value)">Procurement Type<br>
-        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">Procurement Category<br>
-        <input type="radio" name="order" id="order05" value="Procurement Method" onClick="pickAnorder(this.value)">Procurement Method<br>
-        <input type="radio" name="order" id="order06" value="Contract Description" onClick="pickAnorder(this.value)">Contract Description<br>
-        <!--<input type="radio" name="years" id="order07" value="2013" onClick="pickAnorder(this.value)" checked="checked">2013<br>-->
     </form>
 </div>
 
@@ -350,7 +351,7 @@ function pickAnorder(dingske) {
             .append("text")
             .attr("y", function(d) { return -d.r; })//".3em")
             .style("text-anchor", "middle")
-            .text(function(d) { return d.name; });
+            .text(function(d) { return currentOrder == "Contract Description" ? "" : d.name; });
 
 };
 
@@ -393,7 +394,7 @@ function pleaseReport(d) {
                 .datum(mijnData)
                 .append("div")
                 .attr("class", "midRPRTRS")
-                .html(function(d) { console.log(d); return "<span class=\"reportLabels\">sector: " + d["Major Sector"] + "<br/>procurement:<br/>type: " + d["Procurement Type"] + "<br/>category: " + d["Procurement Category"] + "<br/>method: " + d["Procurement Method"] + "<br/>contract description: " + d["Contract Description"] + "<br/><br></span>"; } )
+                .html(function(d) { console.log(d); return "<span class=\"reportLabels\">sector: " + d["Major Sector"] + "<br/><br><b>procurement:</b><br/>type: " + d["Procurement Type"] + "<br/>category: " + d["Procurement Category"] + "<br/>method: " + d["Procurement Method"] + "<br/><br>contract description: " + d["Contract Description"] + "<br/><br></span>"; } )
 //product line: " + d["Product Line"] + "<br/>
         verSlag.select("#bOtrEp")
                 .datum(mijnData)
