@@ -108,6 +108,12 @@
     }
 
 
+    #orderSelector {
+        position: absolute;
+        top: 206px;
+        left: 6px;
+    }
+
     #parentSelector {
         position: absolute;
         top: 6px;
@@ -147,7 +153,7 @@
 <div id="colorSelector">
     pick the category to color by:<br>
     <form action="" method="GET" id="groupPicker">
-        <input type="radio" name="colors" id="color01" value="Major Sector" onClick="pickAcolor(this.value)" checked="checked">major sector<br>
+        <input type="radio" name="colors" id="color01" value="Major Sector" onClick="pickAcolor(this.value)">major sector<br>
         <input type="radio" name="colors" id="color02" value="Supplier Country" onClick="pickAcolor(this.value)">supplier<br>
         <input type="radio" name="colors" id="color03" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
         <input type="radio" name="colors" id="color04" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
@@ -156,6 +162,22 @@
         <input type="radio" name="colors" id="color06" value="Contract Description" onClick="pickAcolor(this.value)">contract description<br>
     </form>
 </div>
+
+
+<div id="orderSelector">
+    pick a variael to order by:<br>
+    <form action="" method="GET" id="orderPicker">
+        <input type="radio" name="order" id="order01" value="Major Sector" onClick="pickAnorder(this.value)" checked="checked">Major Sector<br>
+        <input type="radio" name="order" id="order02" value="Supplier Country" onClick="pickAnorder(this .value)">Supplier Country<br>
+        <input type="radio" name="order" id="order03" value="Procurement Type" onClick="pickAnorder(this.value)">Procurement Type<br>
+        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">Procurement Category<br>
+        <input type="radio" name="order" id="order05" value="Procurement Method" onClick="pickAnorder(this.value)">Procurement Method<br>
+        <input type="radio" name="order" id="order06" value="Contract Description" onClick="pickAnorder(this.value)">Contract Description<br>
+        <!--<input type="radio" name="years" id="order07" value="2013" onClick="pickAnorder(this.value)" checked="checked">2013<br>-->
+    </form>
+</div>
+
+
 <script>
 
 var dataAllround;
@@ -173,7 +195,7 @@ var pack = d3.layout.pack()
 var fill = d3.scale.category20();
 
 var zoom = d3.behavior.zoom()
-        .scaleExtent([1, 3])
+        .scaleExtent([.75, 3])
         .on("zoom",function() { svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
         });
 
@@ -189,28 +211,36 @@ var verSlag = d3.select("#rEpOrtEr")
         .attr("class", "reportdOOs")
         .on("click", pooF)
 
-d3.selectAll("#parentSelector, #colorSelector")
+
+d3.selectAll("#orderSelector, #parentSelector, #colorSelector")
         .attr("class", "deDivs");
+
 
 //d3.json("contractawards.json", function(error, BIGunes) {
 //d3.json("https://finances.worldbank.org/api/views/kdui-wcs3/rows.json", function(error, BIGunes) {
 d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
 //d3.csv("sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
 
-    dataAllround = BIGunes;
 
     BIGunes.forEach(function(d) {
         d.value = parseInt(d["Total Contract Amount (USD)"].substring(1))
     });
 
+    dataAllround = BIGunes;
+
+    doByregionAndcountry();
+
+});
+
+function doByregionAndcountry() {
 
     currentParent = "Supplier Country";
     currentColor = "Major Sector";
 
     var doLLop = new Object;
 
-//doLLop = _.nest(nEEms, ["year", "region", "borrower", currentParent]);
-    doLLop = _.nest(BIGunes, ["Region", "Borrower Country", currentParent]);
+//  doLLop = _.nest(nEEms, ["year", "region", "borrower", currentParent]);
+    doLLop = _.nest(dataAllround, ["Region", "Borrower Country", currentParent]);
 
     doLLop.name = "2013";
 
@@ -247,7 +277,8 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
     /*    node.append("title")
      .text(function(d) { return d.children ? d.name : d.Ptype + ": $" + d.amount; });
      */
-});
+};
+
 
 d3.select(self.frameElement).style("height", diameter + "px");
 
@@ -289,6 +320,39 @@ function pickAgroup(dingske) {
 
 };
 
+function pickAnorder(dingske) {
+
+    currentOrder = dingske;
+
+    svg.selectAll(".node").remove();
+
+    var doLLop = new Object;
+
+    doLLop = _.nest(dataAllround, currentOrder);
+
+    doLLop.name = "root";
+
+    var node = svg.datum(doLLop).selectAll(".node")
+            .data(pack.nodes)
+
+            .enter().append("g")
+            .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+    node.append("circle")
+            .attr("r", function(d) { return d.r; })
+            .style("fill", function(d) { return fill(d[currentColor] ); })
+            .on("mouseover", pleaseReport)
+            .on("mousemove", toolMover)
+            .on("mouseout", pooF)
+
+    node.filter(function(d) { return d.depth <= 1; })
+            .append("text")
+            .attr("y", function(d) { return -d.r; })//".3em")
+            .style("text-anchor", "middle")
+            .text(function(d) { return d.name; });
+
+};
 
 function pickAcolor(dingske) {
 
