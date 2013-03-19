@@ -111,20 +111,20 @@
     #parentSelector {
         position: absolute;
         top: 6px;
-        left: 16px;
+        left: 6px;
     }
 
     #orderSelector {
         position: absolute;
         top: 6px;
-        left: 666px;
+        left: 706px;
     }
 
 
     #colorSelector {
         position: absolute;
-        top: 570px;
-        left: 656px;
+        top: 540px;
+        left: 746px;
     }
 </style>
 
@@ -138,10 +138,10 @@
 </div>
 
 <div id="parentSelector">
-    <strong>order by geography plus one:</strong><br>
+    <strong>pack by geography plus one:</strong><br>
     <form action="" method="GET" id="groupPicker">
-        <input type="radio" name="groups" id="group01" value="Major Sector" onClick="pickAgroup(this.value)">major sector<br>
-        <input type="radio" name="groups" id="group02" value="Supplier Country" onClick="pickAgroup(this.value)" checked="checked">supplier<br>
+        <input type="radio" name="groups" id="group01" value="Supplier Country" onClick="pickAgroup(this.value)" checked="checked">supplier country<br>
+        <input type="radio" name="groups" id="group02" value="Major Sector" onClick="pickAgroup(this.value)">major sector<br>
         <input type="radio" name="groups" id="group03" value="Procurement Type" onClick="pickAgroup(this.value)">procurement type<br>
         <input type="radio" name="groups" id="group04" value="Procurement Category" onClick="pickAgroup(this.value)">procurement category<br>
         <input type="radio" name="groups" id="group05" value="Procurement Method" onClick="pickAgroup(this.value)">procurement method<br>
@@ -151,12 +151,12 @@
 </div>
 
 <div id="orderSelector">
-    <strong>variabel to order by:</strong><br>
+    <strong>just one variable to pack by:</strong><br>
     <form action="" method="GET" id="orderPicker">
-        <input type="radio" name="order" id="order01" value="Major Sector" onClick="pickAnorder(this.value)">major sector<br>
-        <input type="radio" name="order" id="order02" value="Supplier Country" onClick="pickAnorder(this .value)">supplier country<br>
+        <input type="radio" name="order" id="order01" value="Supplier Country" onClick="pickAnorder(this.value)">supplier country<br>
+        <input type="radio" name="order" id="order02" value="Major Sector" onClick="pickAnorder(this.value)">major sector<br>
         <input type="radio" name="order" id="order03" value="Procurement Type" onClick="pickAnorder(this.value)">procurement type<br>
-        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">Procurement Category<br>
+        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">procurement Category<br>
         <input type="radio" name="order" id="order05" value="Procurement Method" onClick="pickAnorder(this.value)">procurement method<br>
         <input type="radio" name="order" id="order06" value="Contract Description" onClick="pickAnorder(this.value)">contract description<br>
         <!--<input type="radio" name="years" id="order07" value="2013" onClick="pickAnorder(this.value)" checked="checked">2013<br>-->
@@ -166,10 +166,10 @@
 
 
 <div id="colorSelector">
-    <strong>variabel to color by:</strong><br>
+    <strong>variable to color by:</strong><br>
     <form action="" method="GET" id="groupPicker">
-        <input type="radio" name="colors" id="color01" value="Major Sector" onClick="pickAcolor(this.value)">major sector<br>
-        <input type="radio" name="colors" id="color02" value="Supplier Country" onClick="pickAcolor(this.value)">supplier country<br>
+        <input type="radio" name="colors" id="color01" value="Supplier Country" onClick="pickAcolor(this.value)">supplier country<br>
+        <input type="radio" name="colors" id="color02" value="Major Sector" onClick="pickAcolor(this.value)"  checked="checked">major sector<br>
         <input type="radio" name="colors" id="color03" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
         <input type="radio" name="colors" id="color04" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
         <input type="radio" name="colors" id="color05" value="Procurement Method" onClick="pickAcolor(this.value)">procurement method<br>
@@ -295,7 +295,7 @@ function pickAgroup(dingske) {
 
     doLLop = _.nest(dataAllround, ["Region", "Borrower Country", dingske]);
 
-    doLLop.name = "root";
+    doLLop.name = "2013";
 
     var node = svg.datum(doLLop).selectAll(".node")
             .data(pack.nodes)
@@ -331,7 +331,7 @@ function pickAnorder(dingske) {
 
     doLLop = _.nest(dataAllround, currentOrder);
 
-    doLLop.name = "root";
+    doLLop.name = "2013";
 
     var node = svg.datum(doLLop).selectAll(".node")
             .data(pack.nodes)
