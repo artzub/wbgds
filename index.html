@@ -26,9 +26,21 @@
         margin: 0;
     }
 
+    #head {
+        position: absolute;
+        left: 6px;
+        top: 590px;
+        width: auto;
+        height: auto;
+        font-size: 440%;
+        font-weight: bold;
+        line-height: 80%;
+        letter-spacing: 90%;
+    }
+
     #chart {
-        margin-left: 40px;
-        margin-top: 20px;
+        margin-left: 10px;
+        margin-top: 12px;
         width: 780px;
         float: left;
     }
@@ -107,27 +119,50 @@
         cursor: pointer;
     }
 
-
-    #parentSelector {
+    #colorSelector {
         position: absolute;
         top: 6px;
         left: 6px;
+        padding-right: 10px;
+        /*  top: 540px;
+          left: 746px;
+          */
     }
 
-    #orderSelector {
+
+    #graBndroP {
         position: absolute;
         top: 6px;
-        left: 706px;
+        left: 600px;
+        width: auto;
+        height: auto;
+        padding-right: 20px;
     }
 
 
-    #colorSelector {
-        position: absolute;
-        top: 540px;
-        left: 746px;
+    .knOpskes {
+        float: left;
     }
+
+
+    #dropZone {
+        stroke: green;
+        stroke-width: 1px;
+        fill: cornsilk;
+        /*  width: 124px;*/
+    }
+
+
+    .moveTxts {
+        color: black;
+    }
+
+
+
+
 </style>
 
+<div id="head">2013<br>WorldBank<br>Contract Awards</div>
 
 <div id="chart"></div>
 
@@ -137,56 +172,38 @@
     <div id="bOtrEp"></div>
 </div>
 
-<div id="parentSelector">
-    <strong>pack by geography plus one:</strong><br>
-    <form action="" method="GET" id="groupPicker">
-        <input type="radio" name="groups" id="group01" value="Supplier Country" onClick="pickAgroup(this.value)" checked="checked">supplier country<br>
-        <input type="radio" name="groups" id="group02" value="Major Sector" onClick="pickAgroup(this.value)">major sector<br>
-        <input type="radio" name="groups" id="group03" value="Procurement Type" onClick="pickAgroup(this.value)">procurement type<br>
-        <input type="radio" name="groups" id="group04" value="Procurement Category" onClick="pickAgroup(this.value)">procurement category<br>
-        <input type="radio" name="groups" id="group05" value="Procurement Method" onClick="pickAgroup(this.value)">procurement method<br>
-        <!--<input type="radio" name="groups" id="group06" value="Product Line" onClick="pickAgroup(this.value)">product line<br>-->
-        <input type="radio" name="groups" id="group06" value="Contract Description" onClick="pickAgroup(this.value)">contract description<br>
-    </form>
-</div>
-
-<div id="orderSelector">
-    <strong>just one variable to pack by:</strong><br>
-    <form action="" method="GET" id="orderPicker">
-        <input type="radio" name="order" id="order01" value="Supplier Country" onClick="pickAnorder(this.value)">supplier country<br>
-        <input type="radio" name="order" id="order02" value="Major Sector" onClick="pickAnorder(this.value)">major sector<br>
-        <input type="radio" name="order" id="order03" value="Procurement Type" onClick="pickAnorder(this.value)">procurement type<br>
-        <input type="radio" name="order" id="order04" value="Procurement Category" onClick="pickAnorder(this.value)">procurement Category<br>
-        <input type="radio" name="order" id="order05" value="Procurement Method" onClick="pickAnorder(this.value)">procurement method<br>
-        <input type="radio" name="order" id="order06" value="Contract Description" onClick="pickAnorder(this.value)">contract description<br>
-        <!--<input type="radio" name="years" id="order07" value="2013" onClick="pickAnorder(this.value)" checked="checked">2013<br>-->
-    </form>
-</div>
-
-
-
 <div id="colorSelector">
     <strong>variable to color by:</strong><br>
     <form action="" method="GET" id="groupPicker">
-        <input type="radio" name="colors" id="color01" value="Supplier Country" onClick="pickAcolor(this.value)">supplier country<br>
-        <input type="radio" name="colors" id="color02" value="Major Sector" onClick="pickAcolor(this.value)"  checked="checked">major sector<br>
-        <input type="radio" name="colors" id="color03" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
-        <input type="radio" name="colors" id="color04" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
-        <input type="radio" name="colors" id="color05" value="Procurement Method" onClick="pickAcolor(this.value)">procurement method<br>
-        <!--<input type="radio" name="colors" id="color06" value="Product Line" onClick="pickAcolor(this.value)">product line<br>-->
-        <input type="radio" name="colors" id="color06" value="Contract Description" onClick="pickAcolor(this.value)">contract description<br>
+        <input type="radio" name="colors" id="color01" value="Region" onClick="pickAcolor(this.value)">region<br>
+        <input type="radio" name="colors" id="color02" value="Borrower Country" onClick="pickAcolor(this.value)">borrower country<br>
+        <input type="radio" name="colors" id="color03" value="Supplier Country" onClick="pickAcolor(this.value)">supplier country<br>
+        <input type="radio" name="colors" id="color04" value="Major Sector" onClick="pickAcolor(this.value)" checked="checked">major sector<br>
+        <input type="radio" name="colors" id="color05" value="Procurement Type" onClick="pickAcolor(this.value)">procurement type<br>
+        <input type="radio" name="colors" id="color06" value="Procurement Category" onClick="pickAcolor(this.value)">procurement category<br>
+        <input type="radio" name="colors" id="color07" value="Procurement Method" onClick="pickAcolor(this.value)">procurement method<br>
+        <!--<input type="radio" name="colors" id="color08" value="Product Line" onClick="pickAcolor(this.value)">product line<br>
+        <input type="radio" name="colors" id="color09" value="Contract Description" onClick="pickAcolor(this.value)">contract description<br>-->
     </form>
 </div>
 
+<div id="graBndroP"><strong>variable(s) to pack by (just drag, drop & (re-)order):</strong><br></div>
 
 <script>
+
 
 var dataAllround;
 
 var currentParent,
         currentColor;
 
+var dropGroup = [];
+
 var diameter = 720;
+
+var width = 150,
+        margin = width/10;
+
 
 var pack = d3.layout.pack()
         .sort(null)
@@ -197,28 +214,90 @@ var fill = d3.scale.category20();
 
 var zoom = d3.behavior.zoom()
         .scaleExtent([.75, 3])
-        .on("zoom",function() { svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")");
-        });
+        .on("zoom",function() { svg.attr("transform", "translate(" + d3.event.translate + ") scale(" + d3.event.scale + ")"); });
+
+var dragThis = d3.behavior.drag()
+        .on("drag", function(d,i) {
+            d.x += d3.event.dx;
+            d.y += d3.event.dy;
+
+            d3.select(this).attr("transform", function(d,i){ return "translate(" + [ d.x,d.y ] + ")"; })
+        })
+
+        .on("dragend", function(d) { var	OrderVar = d.label;
+
+            if (d.x >= width && !contains(dropGroup, OrderVar, "label")) { dropGroup.push(d); };
+
+            if (d.x < width && contains(dropGroup, OrderVar, "label")) { var index = dropGroup.indexOf(d);
+                dropGroup.splice(index, 1);}
+
+            dropGroup.sort(function(d,e) { return d3.ascending(d.y, e.y); });
+
+            var ophaalUhree = dropGroup.map(function(d) { return d.label; } );
+
+            console.log(ophaalUhree);
+
+            pickAnorder(ophaalUhree);
+        })
+
+
+function contains(a, obj, crit) {
+    for (var i = 0; i < a.length; i++) {
+        if (a[i][crit] === obj) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 var svg = d3.select("#chart")
         .append("svg")
         .attr("width", diameter)
         .attr("height", diameter)
         .append("g")
+        .attr("id", "chArtSVG")
     //      .attr("transform", "translate(2,2)")
         .call(zoom);
+
+
+var ButtonBakkie = d3.select("#graBndroP")
+        .append("svg")
+        .attr("id", "controlsSVG")
+        .attr("width", width*2)
+        .attr("height", width+margin)
+
+
+    /*   var schaduwDroppie = ButtonBakkie.append("defs").append("filter")
+     .attr('id', 'dropShadow')
+     schaduwDroppie.append("feGaussianBlur")
+     .attr("in", "SourceAlpha")
+     .attr('stdDeviation', 3)
+
+     schaduwDroppie.append
+
+     <defs>
+     <filter id="dropshadow" height="130%">
+     <feGaussianBlur in="SourceAlpha" stdDeviation="3"/> <!-- stdDeviation is how much to blur -->
+        <feOffset dx="2" dy="2" result="offsetblur"/> <!-- how much to offset -->
+        <feMerge>
+        <feMergeNode/> <!-- this contains the offset blurred image -->
+        <feMergeNode in="SourceGraphic"/> <!-- this contains the element that the filter is applied to -->
+        </feMerge>
+        </filter>
+        </defs>
+        */
+
 
 var verSlag = d3.select("#rEpOrtEr")
         .attr("class", "reportdOOs")
         .on("click", pooF)
 
 
-d3.selectAll("#orderSelector, #parentSelector, #colorSelector")
+d3.selectAll("#colorSelector, #graBndroP")
         .attr("class", "deDivs");
 
 
-//d3.json("contractawards.json", function(error, BIGunes) {
-//d3.json("https://finances.worldbank.org/api/views/kdui-wcs3/rows.json", function(error, BIGunes) {
 d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
 //d3.csv("sprint_major-contract-awards-2013.csv", function(error, BIGunes) {
 
@@ -229,101 +308,71 @@ d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.cs
 
     dataAllround = BIGunes;
 
-    doByregionAndcountry();
+    goButtonize();
+
+    pickAnorder("");
+
+    pickAcolor("Major Sector");
+
+//  doByregionAndcountry();
 
 });
 
-function doByregionAndcountry() {
 
-    currentParent = "Supplier Country";
-    currentColor = "Major Sector";
+function goButtonize() {
 
-    var doLLop = new Object;
+    var knoPPen = ["Region", "Borrower Country", "Supplier Country", "Major Sector", "Procurement Type", "Procurement Category", "Procurement Method"];
+//, "Product Line", "Contract Description"
 
-//  doLLop = _.nest(nEEms, ["year", "region", "borrower", currentParent]);
-    doLLop = _.nest(dataAllround, ["Region", "Borrower Country", currentParent]);
 
-    doLLop.name = "2013";
+    var zOOi = [];
 
-    console.log(doLLop);
+    for(i = 0; i < knoPPen.length; i++)
+    {
+        zOOi.push({ "label": knoPPen[i], "x": 10, "y": (20+i*20) });
+    }
 
-    var node = svg.datum(doLLop).selectAll(".node")
-            .data(pack.nodes)
+    var woef = ButtonBakkie.append("g")
+            .attr("width", 150)
+            .attr("height", 150)
+            .attr("transform", "translate(" + width + ")")
 
+    woef.append("rect")
+            .attr("y", 5)
+            .attr("width", 150)
+            .attr("height", "86%")
+            .attr("id", "dropZone")
+    //  .attr("filter", "url(#dropshadow)")
+
+    var wAf = ButtonBakkie.append("g")
+            .attr("width", width)
+            .attr("height", 150)
+
+
+    wAf.selectAll(".knOpskes")
+            .data(zOOi)
             .enter().append("g")
-            .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
-            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+            .attr("class", "knOpskes")
+            .attr("transform", function(d,i){ return "translate(" + [ d.x,d.y ] + ")" })
+            .style("cursor", "move")
+            .call(dragThis)
 
-    node.append("circle")
-            .attr("r", function(d) { return d.r; })
-            .style("fill", function(d) { return fill(d[currentColor] ); })
-            .on("mouseover", pleaseReport)
-            .on("mousemove", toolMover)
-            .on("mouseout", pooF)
-
-
-    node.filter(function(d) { return d.depth <= 1; })
             .append("text")
-            .attr("y", function(d) { return -d.r; })//".3em")
-            .style("text-anchor", "middle")
-            .text(function(d) { return d.name != "OTHER" ? d.name : ""; });//.substring(0, d.r / 3); });
+            .text(function(d) { return d.label; })
+            .attr("class", "moveTxts")
+}
 
-
-    /*   node.filter(function(d) { return !d.children; })
-     .append("text")
-     .attr("dy", ".3em")
-     .style("text-anchor", "middle")
-     //     .text(function(d) { return d.sector; });//.substring(0, d.r / 3); });
-     */
-    /*    node.append("title")
-     .text(function(d) { return d.children ? d.name : d.Ptype + ": $" + d.amount; });
-     */
-};
 
 
 d3.select(self.frameElement).style("height", diameter + "px");
 
 
 
-function pickAgroup(dingske) {
-
-    currentParent = dingske;
-
-    svg.selectAll(".node").remove();
-
-    var doLLop = new Object;
-
-    doLLop = _.nest(dataAllround, ["Region", "Borrower Country", dingske]);
-
-    doLLop.name = "2013";
-
-    var node = svg.datum(doLLop).selectAll(".node")
-            .data(pack.nodes)
-
-            .enter().append("g")
-            .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
-            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
-    node.append("circle")
-            .attr("r", function(d) { return d.r; })
-            .style("fill", function(d) { return fill(d[currentColor] ); })
-            .on("mouseover", pleaseReport)
-            .on("mousemove", toolMover)
-            .on("mouseout", pooF)
-
-    node.filter(function(d) { return d.depth <= 1; })
-            .append("text")
-            .attr("y", function(d) { return -d.r; })//".3em")
-            .style("text-anchor", "middle")
-            .text(function(d) { return d.name; });
-
-
-
-};
-
 function pickAnorder(dingske) {
 
     currentOrder = dingske;
+
+    console.log(currentOrder);
 
     svg.selectAll(".node").remove();
 
@@ -333,12 +382,17 @@ function pickAnorder(dingske) {
 
     doLLop.name = "2013";
 
+    //       node.sort(function(d,e) { return d3.ascending(d["Total Contract Amount (USD)"], e["Total Contract Amount (USD)"]) });
+
+
     var node = svg.datum(doLLop).selectAll(".node")
             .data(pack.nodes)
 
             .enter().append("g")
             .attr("class", function(d) { return d.children ? "node" : "leaf node"; })
             .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+
 
     node.append("circle")
             .attr("r", function(d) { return d.r; })
@@ -360,8 +414,12 @@ function pickAcolor(dingske) {
     currentColor = dingske;
 
     d3.selectAll(".node").selectAll("circle")
+            .transition()
+            .duration(1250)
             .style("fill", function(d) { return fill(d[dingske] ); })
 };
+
+
 
 
 function pleaseReport(d) {
@@ -394,7 +452,7 @@ function pleaseReport(d) {
                 .datum(mijnData)
                 .append("div")
                 .attr("class", "midRPRTRS")
-                .html(function(d) { console.log(d); return "<span class=\"reportLabels\">sector: " + d["Major Sector"] + "<br/><br><b>procurement:</b><br/>type: " + d["Procurement Type"] + "<br/>category: " + d["Procurement Category"] + "<br/>method: " + d["Procurement Method"] + "<br/><br>contract description: " + d["Contract Description"] + "<br/><br></span>"; } )
+                .html(function(d) { return "<span class=\"reportLabels\">sector: " + d["Major Sector"] + "<br/><br><b>procurement:</b><br/>type: " + d["Procurement Type"] + "<br/>category: " + d["Procurement Category"] + "<br/>method: " + d["Procurement Method"] + "<br/><br>contract description: " + d["Contract Description"] + "<br/><br></span>"; } )
 //product line: " + d["Product Line"] + "<br/>
         verSlag.select("#bOtrEp")
                 .datum(mijnData)
