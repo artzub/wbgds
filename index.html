@@ -11,6 +11,7 @@
 <script charset="utf-8" src="http://d3js.org/d3.v3.min.js"></script>
 <script charset="utf-8" src="https://rawgithub.com/artzub/dbsv/master/progressbar.js"></script>
 <script charset="utf-8" src="https://rawgithub.com/artzub/dbsv/master/tooltip.js"></script>
+<script charset="utf-8" src="https://rawgithub.com/artzub/wbgds/smy/wbc.js"></script>
 
 <style>
     html, body {
@@ -28,16 +29,34 @@
         overflow: hidden;
     }
 
-    #c {
+    #map {
         left: 0;
         top: 0;
         z-index: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #map svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    #map .feature {
+        fill : #2C2C43;
+        stroke : #4A4A70;
+    }
+
+    #c {
+        left: 0;
+        top: 0;
+        z-index: 1;
     }
 
     #s {
         left: 0;
         top: 0;
-        z-index: 1;
+        z-index: 2;
     }
 
     .gtLeg, .gttLeg {
@@ -231,6 +250,10 @@
                     <input id="chTrack" type="checkbox" checked="checked">
                     <label for="chTrack">Show tracks</label>
                 </li>
+                <li>
+                    <input id="chTail" type="checkbox" checked="checked">
+                    <label for="chTail">Fading tail</label>
+                </li>
             </ul>
         </li>
         <li>Info
@@ -270,6 +293,7 @@
                 </li>
             </ul>
         </li>
+        <li><a href="#" title="Open in a new window" id="fs">fullscreen</a></li>
     </ul>
 </div>
 
@@ -312,22 +336,23 @@ var setting = {
     , onlyShownExt : true // show only extension which is shown
     , showHistogram : true // displaying histogram of changed files
     , showHalo : true // show a child's halo
-    , padding : 25 // padding around a parent
+    , padding : 0 // padding around a parent
     , rateOpacity : .5 // rate of decrease of opacity
     , rateFlash : 2.5 // rate of decrease of flash
     , sizeChild : 2 // size of child
-    , sizeParent : 24 // size of parent
+    , sizeParent : 5 // size of parent
     , showPaddingCircle : false // show circle of padding
     , useImage : true // show base's image
     , showChild : true // show a child
-    , showParent : true // show a parent
-    , showLabel : true // show base name
+    , showParent : false // show a parent
+    , showLabel : false // show base name
     , showMessage : false // show commit message
     , skipEmptyDate : true // skip empty date
     , blendingLighter : true
     , showTrack : true // show tracks
     , showEdge : false // show an edge
     , groupByRegion : false
+    , fadingTail : true
 };
 
 var asyncForEach = function(items, fn, time) {
@@ -440,7 +465,7 @@ var ONE_SECOND = 1000,
 
         a = d.parentNode;
         a.relations = a.relations || {};
-        a.fixed = false;
+        a.fixed = a.x instanceof Object || a.y instanceof Object ? true : false;
 
         if (!l)
             console.log(d);
@@ -714,13 +739,21 @@ var ONE_SECOND = 1000,
                     : y
                 ;
             }
+            if (type == typeNode.parent) {
+                if (d.hasOwnProperty("x")) {
+                    x = d.x;
+                }
+                if (d.hasOwnProperty("y")) {
+                    y = d.y;
+                }
+            }
         }
 
         return {
             x : x,
             y : y,
             id : type + (type == typeNode.child ? _childKey(d) : type == typeNode.region ? d : _parentKey(d)),
-            size : type != typeNode.child ? type == typeNode.parent ? 24 : 50 : d.size || 2,
+            size : type != typeNode.child ? type == typeNode.parent ? setting.sizeParent : 50 : d.size || 2,
             weight : type != typeNode.child ? 24 : d.size || 2,
             fixed : true,
             visible : type == typeNode.region,
@@ -1029,20 +1062,23 @@ var ONE_SECOND = 1000,
                 x = Math.floor(d.x);
                 y = Math.floor(d.y);
 
-                /*setting.showTrack = true;
-                if (setting.showTrack) {
-                    bufCtx.save();
+
+                if (setting.fadingTail && setting.showTrack) {
+                    //bufCtx.save();
                     bufCtx.lineCap="round";
-                    bufCtx.lineJoin="round";
+                    //bufCtx.lineJoin="round";
                     bufCtx.lineWidth = (radius(nr(d)) / 4)  || 1;
                     bufCtx.fillStyle = "none";
+                    bufCtx.strokeStyle = c.toString();
 
                     var rs = d.paths.slice(0).reverse(),
-                        lrs = rs.length;
+                        lrs = rs.length,
+                        cura = bufCtx.globalAlpha;
 
                     for (var p in rs) {
                         if (!rs.hasOwnProperty(p))
                             continue;
+
                         bufCtx.beginPath();
                         if (p < 1)
                             bufCtx.moveTo(x, y);
@@ -1051,25 +1087,20 @@ var ONE_SECOND = 1000,
                                 Math.floor(rs[p - 1].x),
                                 Math.floor(rs[p - 1].y)
                             );
-                        bufCtx.strokeStyle = "rgba(" + [c.r, c.g, c.b, (lrs - p)/lrs ] + ")";
                         bufCtx.lineTo(
                             Math.floor(rs[p].x),
                             Math.floor(rs[p].y)
                         );
+                        bufCtx.closePath();
+                        bufCtx.globalAlpha = ((lrs - p)/lrs) * cura;
+                        //bufCtx.strokeStyle = "rgba(" + [c.r, c.g, c.b, (lrs - p)/lrs ] + ")";
                         bufCtx.stroke();
                     }
-                    d.pathLife = (d.pathLife || 0);
-                    if (d.pathLife++ > 2) {
-                        d.pathLife = 0;
-                        if (d.paths.length)
-                            d.paths.shift();
-                    }
-                    //bufCtx.closePath();
+                    //bufCtx.restore();
+                    bufCtx.globalAlpha = cura;
+                }
 
-                    bufCtx.restore();
-                }*/
-
-                if (setting.showTrack) {
+                if (!setting.fadingTail && setting.showTrack) {
                     bufCtx.save();
                     bufCtx.beginPath();
                     bufCtx.lineCap="round";
@@ -1089,7 +1120,6 @@ var ONE_SECOND = 1000,
                                 Math.floor(rs[p].x),
                                 Math.floor(rs[p].y)
                         );
-
                     }
                     //bufCtx.closePath();
                     bufCtx.stroke();
@@ -1541,7 +1571,8 @@ var ONE_SECOND = 1000,
 
             if (d.type == typeNode.parent) {
                 res = [
-                    "Country: <b>",
+                    d.img && d.img.width > 0 && d.img.height > 0 ? d.img.outerHTML : "",
+                    " Country: <b>",
                     d.nodeValue.shortName,
                     "</b><hr/>Supplied ($): <b>",
                     th(d.nodeValue.supplied),
@@ -1633,6 +1664,22 @@ var ONE_SECOND = 1000,
         moveToolTip(d, d3.event);
     }
 
+
+    function move() {
+        lastEvent.translate = d3.event.translate.slice(0);
+        lastEvent.scale = d3.event.scale;
+
+        var tl = lastEvent.translate[0] / lastEvent.scale,
+                tt = lastEvent.translate[1] / lastEvent.scale;
+
+        xW.range([-tl, -tl + _w / lastEvent.scale])
+                .domain([0, _w]);
+        yH.range([-tt, -tt + _h / lastEvent.scale])
+                .domain([0, _h]);
+
+        valid = false;
+    }
+
     vis.runShow = function(data, dom, w, h, asetting) {
         if (_worker)
             clearInterval(_worker);
@@ -1674,20 +1721,7 @@ var ONE_SECOND = 1000,
                 .scaleExtent([.1, 8])
                 .scale(1)
                 .translate([0, 0])
-                .on("zoom", function() {
-                    lastEvent.translate = d3.event.translate.slice(0);
-                    lastEvent.scale = d3.event.scale;
-
-                    var tl = lastEvent.translate[0] / lastEvent.scale,
-                        tt = lastEvent.translate[1] / lastEvent.scale;
-
-                    xW.range([-tl, -tl + _w / lastEvent.scale])
-                            .domain([0, _w]);
-                    yH.range([-tt, -tt + _h / lastEvent.scale])
-                            .domain([0, _h]);
-
-                    valid = false;
-                });
+                .on("zoom", move);
 
         canvas = layer.append("canvas")
             .text("This browser don't support element type of Canvas.")
@@ -1721,7 +1755,7 @@ var ONE_SECOND = 1000,
             .append("svg").attr('width', w).attr("height", h);
 
         layer.append("g")
-            .call(zoom)
+            .call(setting.zoom ? setting.zoom : zoom)
             .on('mousemove.tooltip', movem)
             .append("rect")
             .attr("width", w)
@@ -1794,7 +1828,8 @@ var ONE_SECOND = 1000,
                 .size([w, h])
                 .friction(.75)
                 .gravity(0)
-                .charge(function(d) {return -1 * radius(nr(d)); } )
+                //.charge(function(d) {return -1 * radius(nr(d)); } )
+                .charge(-.5)
                 .on("tick", tick))
                 .nodes([])
         ;
@@ -1803,7 +1838,7 @@ var ONE_SECOND = 1000,
                 .range([5, 1])
                 .domain([.1, 1]);
 
-        setting.padding = setting.padding || 25;
+        setting.padding = setting.padding || 0;
         _forceBase = (_forceBase || d3.layout.force()
             .stop()
             .size([w, h])
@@ -1852,9 +1887,22 @@ var ONE_SECOND = 1000,
         div
     ;
 
+    wbc.getByIsoId = function(id) {
+        var c,
+            l = wbc[1].length;
+        while(--l > -1) {
+            c = wbc[1][l];
+            if (c.iso2Code == id)
+                return c;
+        }
+        return null;
+    };
+
     var countriesCounter = 0,
         countries = {},
         countryByIndex = [],
+        failCountryCoord = {length : 0},
+        needPaintCapital = [],
         projects
     ;
 
@@ -1871,6 +1919,24 @@ var ONE_SECOND = 1000,
         d.img.src = "https://dl-web.dropbox.com/spa/6x4vg7uwuzglgh3/wbgds/public/flags/" + d.key.toLowerCase() + '.png';
     }
 
+    function coord(x, y) {
+        var c = [x, y];
+        return {
+            x : {
+                valueOf : function() {
+                    var p = projection(c);
+                    return p[0];
+                }
+            },
+            y : {
+                valueOf : function() {
+                    var p = projection(c);
+                    return p[1];
+                }
+            }
+        }
+    }
+
     // return object country
     function initCounty(key, value) {
         var c = countries[key] || ( countries[key] = {
@@ -1884,9 +1950,32 @@ var ONE_SECOND = 1000,
                 return full ? this.name : this.shortName;
             }
         });
-        if (!countryByIndex[c.id])
-            preload(c);
+        if (!countryByIndex[c.id]) {
+            var cc = wbc.getByIsoId(c.key)
+                ;
+            if (!cc) {
+                cc = failCountryCoord[c.key];
+                if (!cc) {
+                    cc = {
+                        longitude : -50 + (10 * failCountryCoord.length++),
+                        latitude : 80,
+                        capitalCity : c.shortName
+                    };
+                    failCountryCoord[c.key] = cc;
+                }
+            }
+            cc.init = true;
+            c.capitalCity = {
+                name : cc.capitalCity,
+                coord : coord(cc.longitude, cc.latitude)
+            };
+            c.x = c.capitalCity.coord.x;
+            c.y = c.capitalCity.coord.y;
 
+            needPaintCapital.push(cc);
+
+            preload(c);
+        }
         return countryByIndex[c.id] = c;
     }
 
@@ -1959,9 +2048,40 @@ var ONE_SECOND = 1000,
     var sizes = d3.scale.linear()
         .range([4, 400]);
 
+    var projection = d3.geo.mercator();
+
+    var path = d3.geo.path()
+        .projection(projection);
+
+    function ctr(d) {
+        return "translate(" + projection([d.longitude, d.latitude]) + ")";
+    }
+
+    var zoom = d3.behavior.zoom()
+        .on("zoom", function() {
+            projection.translate(d3.event.translate).scale(d3.event.scale);
+            feature.attr("d", path);
+            circle.attr("transform", ctr);
+        })
+        ;
+
+    var fsvg = d3.select(document.body)
+            .append("div")
+            .attr("id", "map")
+            .append("svg");
+
+    var feature = fsvg
+            .selectAll("path.feature");
+
+    var circle = fsvg
+            .selectAll("circle");
+
     function request(error, data) {
         var l, a, b;
         projects = {};
+
+        failCountryCoord = {length : 0};
+        needPaintCapital.splice(0);
 
         data = data.map(initItem);
         l = data.length;
@@ -1984,6 +2104,28 @@ var ONE_SECOND = 1000,
         w = document.body.clientWidth;
         h = document.body.clientHeight;
 
+        projection
+            .scale(w/6.5)
+            .translate([w / 2, h / 1.6])
+        ;
+
+        zoom.translate(projection.translate())
+            .scale(projection.scale())
+            .scaleExtent([h / 6, h])
+        ;
+
+        feature.attr("d", path);
+
+        fsvg.selectAll("circle").remove();
+
+        circle = fsvg.selectAll("circle")
+            .data(needPaintCapital)
+            .enter()
+            .append("circle")
+            .attr("r", 1)
+            .attr("fill", "#fff")
+            .attr("transform", ctr);
+
         vis.pb = vis.pb || (
             d3.select(document.body)
                 .append("div")
@@ -1999,10 +2141,13 @@ var ONE_SECOND = 1000,
         vis.pb.width(w).height(18).textPosition("middle").max(0);
 
         imgPreloader.hide();
+
+        setting.zoom = zoom;
+
         vis.runShow(_data, div, w, h, setting);
         btnPause.show();
         btnStop.show();
-        //vis.pauseShow();
+        //vis.stopShow();
     }
 
     d3.select("#chHisto").on("change", function(d) {
@@ -2020,6 +2165,12 @@ var ONE_SECOND = 1000,
     d3.select("#chTrack").on("change", function(d) {
         setting.showTrack = this.checked;
     });
+
+    d3.select("#chTail").on("change", function(d) {
+        setting.fadingTail = this.checked;
+    });
+
+    d3.select("#fs").attr("href", document.location);
 
     var imgPreloader = d3.select("#imgPreloader"),
         btnStart = d3.select("#btnStart").on('click', function() {
@@ -2124,11 +2275,28 @@ var ONE_SECOND = 1000,
     ;
 
     imgPreloader.show();
-    if (document.location.href.indexOf('dl-web.dropbox.com') > -1)
-        d3.csv("https://dl-web.dropbox.com/spa/6x4vg7uwuzglgh3/wbgds/public/" + fy + '.csv', request);
-    else
-        d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", request);
-        //d3.csv("sprint_major-contract-awards-2013.csv", request);
+
+    d3.json(document.location.href.indexOf('dl-web.dropbox.com') > -1
+        ? "world-countries.json"
+        : "/sites/default/files/sprint/data/world-countries.json", function (error, collection) {
+
+        feature = feature
+            .data(collection.features)
+            .enter().append("path")
+            .attr("class", "feature")
+        ;
+
+/*            .on("mouseover", overpath)
+            .on("mousemove", moverpath)
+        //.on("click", clickPath)
+            .on("mouseout", outpath)
+*/
+        if (document.location.href.indexOf('dl-web.dropbox.com') > -1)
+            d3.csv(fy + '.csv', request);
+        else
+            d3.csv("/sites/default/files/data_set/admin/sprint_major-contract-awards-2013.csv", request);
+    });
+
 })();
 
 </script>
