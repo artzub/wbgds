@@ -1115,10 +1115,8 @@ var ONE_SECOND = 1000,
                             Math.floor(rs[p].x),
                             Math.floor(rs[p].y)
                         );
-                        bufCtx.closePath();
-                        bufCtx.globalAlpha = ((lrs - p)/lrs) * cura;
-                        //bufCtx.strokeStyle = "rgba(" + [c.r, c.g, c.b, (lrs - p)/lrs ] + ")";
                         bufCtx.stroke();
+                        bufCtx.globalAlpha = ((lrs - p)/lrs) * cura;
                     }
                     //bufCtx.restore();
                     bufCtx.globalAlpha = cura;
